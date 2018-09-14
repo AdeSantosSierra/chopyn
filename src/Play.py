@@ -18,6 +18,7 @@ class CSVtoMIDI(object):
 		# Store dataframe
 		self.dataframe = dataframe
 
+		# Create and convert the file
 		self.create_csv(csv_file)
 		self.convert_csv_to_midi(csv_file,midi_file)
 
