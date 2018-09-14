@@ -15,7 +15,7 @@ class CSVtoMIDI(object):
 		csv_file = '../output/CSV/'+name_file_midi+'.csv'
 		midi_file = '../output/MIDI/'+name_file_midi+'.midi'
 
-		# Abro el archivo
+		# Store dataframe
 		self.dataframe = dataframe
 
 		self.create_csv(csv_file)
@@ -66,10 +66,10 @@ class CSVtoMIDI(object):
 	def create_csv(self, csv_file):
     	# Create CSV file
 
-		self.csv = open(csv_file, 'w')
+		csv = open(csv_file, 'w')
 		self.init_dict(self.dataframe.part.unique())
 
-		# El número de canales debería venir dado por datamart_to_save.part.max()
+		# Number of voices/instruments should be given by datamart_to_save.part.max()
 		header_list = \
 		['0, 0, Header, 1, '+str(self.dataframe.part.max()+1)+', 480',
 		# Not needed now
@@ -83,7 +83,7 @@ class CSVtoMIDI(object):
 		'']
 		
 		# Write the header into the CSV file
-		self.csv.write('\n'.join(header_list))
+		csv.write('\n'.join(header_list))
 
 		# For every row in the dataframe, apply the method appendNote, which will store in self.dic
 		# one line per note
@@ -104,13 +104,13 @@ class CSVtoMIDI(object):
 		# Notes
 		# End_track
 		# Example:
-		[self.csv.write('\n'.join(self.dic[iterDict])) for iterDict in self.dic.keys()]
+		[csv.write('\n'.join(self.dic[iterDict])) for iterDict in self.dic.keys()]
 
 		# End of file
-		self.csv.write('0, 0, End_of_file')
+		csv.write('0, 0, End_of_file')
 
 		# Close the file
-		self.csv.close()
+		csv.close()
 
 	def convert_csv_to_midi(self,csv_file,midi_file):
 		# Convert CSV to MIDI
@@ -125,24 +125,6 @@ if __name__== "__main__":
 	datamart = pd.read_csv('../../Data Beers/data/NetPerform/generated/Chat_and_SocialNet.csv')
 	CSVtoMIDI(datamart)
 
-
-
-
-# # Guardamos cada nota en la parte correspondiente, por ahora en un diccionario
-# for iterDic in music.dic.keys():
-#     print(music.dic[iterDic][1:5])
-#     v = music.dic[iterDic][-1].split(',')[:2]
-#     print(v)
-#     v.append(' End_track\n')
-#     print(v)
-#     music.dic[iterDic].append(','.join(v))
-
-# # Creamos los archivos csv y midi
-# csv_file = '../output/NetPerform/MIDI/csvtomidi.csv'
-# midi_file = '../output/NetPerform/MIDI/csvtomidi.midi'
-
-# # Abro el archivo
-# csv = open(csv_file, 'w')
 
 
 
