@@ -12,8 +12,8 @@ class CSVtoMIDI(object):
 		
 		# Create the names for the csv and midi files
 		name_file_midi = 'my_first_midi_file'
-		csv_file = '../output/CSV/'+name_file_midi+'.csv'
-		midi_file = '../output/MIDI/'+name_file_midi+'.midi'
+		csv_file = '../../output/CSV/'+name_file_midi+'.csv'
+		midi_file = '../../output/MIDI/'+name_file_midi+'.midi'
 
 		# Store dataframe
 		self.dataframe = dataframe
@@ -122,7 +122,7 @@ class CSVtoMIDI(object):
 if __name__== "__main__":
 	import pandas as pd
 	print('hola')	
-	datamart = pd.read_csv('../../Data Beers/data/NetPerform/generated/Chat_and_SocialNet.csv')
+	datamart = pd.read_csv('../../data/music.csv')
 	CSVtoMIDI(datamart)
 
 
