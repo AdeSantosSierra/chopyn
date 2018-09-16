@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-class CSVtoMIDI(object):
+class CSVtoMIDI:
 
 	# Class to convert CSV into MIDI
 	# Add DOC later
@@ -29,14 +29,14 @@ class CSVtoMIDI(object):
 		# Start_track and Program_c
 		self.dic = {key: [str(key+1)+', 0, Start_track',
 						  # 0, Program_c, Channel, Instrument
-                          str(key+1)+', 0, Program_c, 1, 1'] for key in all_the_voices}
+                          str(key+1)+', 0, Program_c, 1, 20'] for key in all_the_voices}
 
 
 	def appendNote (self,row):
 		# For every single note and voice/instrument, this method will include one row per note, 
 		# for the corresponding voice. Sometimes, voice/instrument is called part.
 
-		# Example:
+		# Example of the result:
 		# 3, 0, Note_on_c, 3, 62, 28
 		# 3, 250, Note_off_c, 3, 62, 0
 		# 3, 250, Note_on_c, 3, 53, 34
@@ -122,10 +122,11 @@ class CSVtoMIDI(object):
 
 if __name__== "__main__":
 	import pandas as pd
-	print('hola')	
+	
 	datamart = pd.read_csv('../../data/music.csv')
+	print(datamart.head())
 	CSVtoMIDI(datamart)
-
+	print('Hi there, it works!')
 
 
 
