@@ -28,7 +28,6 @@ class MusicalNote(object):
 	def get_props(self):
 		return self.notes_props
 
-	# MusicalNote({parameters:})
 
 class Do(MusicalNote):
 	# Create Musical Note - Do
@@ -38,7 +37,6 @@ class Do(MusicalNote):
 		# Sharp (#) and flat (b)
 		notes_props.update({'pitch':60})
 		super(self.__class__, self).__init__(**notes_props)
-
 
 class Re(MusicalNote):
 	# Create Musical Note - Re
