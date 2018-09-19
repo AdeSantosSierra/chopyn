@@ -19,6 +19,10 @@ class MusicalNote(object):
 		self.intensity = notes_props['intensity']
 		self.timbre = notes_props['timbre']
 
+		# Check whether there is alteration on the properties of the notes
+		if 'alteration' in notes_props:
+			self.alteration = notes_props['alteration']
+
 	def get_pitch(self):
 		return self.pitch
 
