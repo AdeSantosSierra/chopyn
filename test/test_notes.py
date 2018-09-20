@@ -12,6 +12,12 @@ import numpy as np
 import pandas as pd
 
 # content of test_sample.py
+def test_get_pitch():
+	random_pitch = np.random.randint(50)
+	notes_props = {'pitch':random_pitch, 'duration':100, 'intensity': 200, 'timbre': 1}
+	do = Do(**notes_props)
+	assert do.get_pitch() == random_pitch
+
 def test_update_pitch_do():
 	random_pitch = np.random.randint(50)
 	notes_props = {'pitch':random_pitch, 'duration':100, 'intensity': 200, 'timbre': 1}
