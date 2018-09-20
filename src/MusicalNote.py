@@ -1,10 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-
-
 # Create Musical Notes (Do, Re, Mi, ...)
-
 class MusicalNote(object):
 
 	# Duration (lon/short notes)
@@ -107,3 +104,7 @@ if __name__ == '__main__':
 	print(standardMusicalNote.get_pitch())
 	print(do.get_pitch())
 	print(re.get_pitch())
+
+	# test the alteration
+	notes_props_alterations = {'duration':100,'timbre':2,'intensity':4,'alteration':'#'}
+	do = Do(**notes_props_alterations)
