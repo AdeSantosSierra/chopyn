@@ -29,7 +29,7 @@ class CSVtoMIDI:
 		# Start_track and Program_c
 		self.dic = {key: [str(key+1)+', 0, Start_track',
 						  # 0, Program_c, Channel, Instrument
-                          str(key+1)+', 0, Program_c, 1, 20'] for key in all_the_voices}
+                          str(key+1)+', 0, Program_c, 1, 1'] for key in all_the_voices}
 
 
 	def appendNote (self,row):
