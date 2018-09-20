@@ -93,18 +93,3 @@ class Si(MusicalNote):
 		# Sharp (#) and flat (b)
 		notes_props.update({'pitch':71})
 		super(self.__class__, self).__init__(**notes_props)
-
-
-if __name__ == '__main__':
-	notes_props = {'pitch':12,'duration':100,'timbre':2,'intensity':4}
-	standardMusicalNote = MusicalNote(**notes_props)
-	do = Do(**notes_props)
-	re = Re(**notes_props)
-
-	print(standardMusicalNote.get_pitch())
-	print(do.get_pitch())
-	print(re.get_pitch())
-
-	# test the alteration
-	notes_props_alterations = {'duration':100,'timbre':2,'intensity':4,'alteration':'#'}
-	do = Do(**notes_props_alterations)
