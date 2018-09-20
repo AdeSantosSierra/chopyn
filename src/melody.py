@@ -13,20 +13,18 @@ import pandas as pd
 class RandomMelody(object):
 
 	def __init__(self):
-		
-		notes_props = {'duration':500,'intensity':100,'timbre':1}
-		long_notes_props = {'duration':1000,'intensity':100,'timbre':1}
-		short_notes_props = {'duration':250,'intensity':100,'timbre':1}
 
-		self.sequence_of_notes = [Do(**notes_props), Do(**notes_props),
-		Sol(**notes_props), Sol(**notes_props),
-		La(**notes_props), La(**notes_props),
-		Sol(**long_notes_props),
-		Fa(**notes_props), Fa(**notes_props),
-		Mi(**notes_props), Mi(**notes_props),
-		Re(**notes_props), Re(**notes_props),
-		Do(**long_notes_props)
-		]
+		notes_props = ({'duration':10*np.random.randint(100), 
+						'intensity':np.random.randint(50),
+						'timbre':np.random.randint(10)})
+
+		notes_names = [Do,Re,Mi,Fa,Sol,La,Si]
+		melody_length = 30
+		random_sequence = np.random.choice(notes_names, melody_length, replace=True)
+
+		self.sequence_of_notes = [iterator_note(**notes_props) for iterator_note in random_sequence]
+
+		
 
 	def convert_to_midi(self):
 
