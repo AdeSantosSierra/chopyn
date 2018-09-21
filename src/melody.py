@@ -14,15 +14,18 @@ class RandomMelody(object):
 
 	def __init__(self):
 
-		notes_props = ({'duration':10*np.random.randint(100), 
+		notes_props = ({'duration':np.random.randint(500,1000), 
 						'intensity':np.random.randint(50),
 						'timbre':np.random.randint(10)})
 
 		notes_names = [Do,Re,Mi,Fa,Sol,La,Si]
-		melody_length = 30
+		melody_length = 20
 		random_sequence = np.random.choice(notes_names, melody_length, replace=True)
 
-		self.sequence_of_notes = [iterator_note(**notes_props) for iterator_note in random_sequence]
+		self.sequence_of_notes = [iterator_note(**{'duration':np.random.randint(500,1000), 
+												   'intensity':70,
+												   'timbre':1}) 
+							      for iterator_note in random_sequence]
 
 		
 
