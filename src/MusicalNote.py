@@ -11,7 +11,16 @@ class MusicalNote(object):
 	# Intensity (louder/soft)
 	# Timbre (instrument you use to play)
 
-	
+	global half_tone, tone, number_notes, diatonic_scale, distance_diatonic_scale, dic_alterations
+
+	# Config main properties of music
+	half_tone = 1
+	tone = 2
+	number_notes = 7
+	diatonic_scale = ['Do','Re','Mi','Fa','Sol','La','Si']
+	distance_diatonic_scale = [tone, tone, half_tone, tone, tone, tone, half_tone]
+	# dic_alterations = {'bb':-2,'b':-1,'n':0,'#':1,'x':2}
+	dic_alterations = {'-2':'bb','-1':'b','0':'','1':'#','2':'x'}
 
 	def __init__(self, **notes_props):
 
