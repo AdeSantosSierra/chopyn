@@ -130,13 +130,16 @@ class MusicalNote(object):
 		# Combine the name of the note (Do, Re, ...) with their corresponding alteration if any
 		return self.__class__.__name__+self.alteration
 
+
 	def get_major_chord(self):
 		tonic_note = globals()[self.__class__.__name__]()
 		return [tonic_note, tonic_note.get_note_from_interval('3M'), tonic_note.get_note_from_interval('5P')]
 
+
 	def get_minor_chord(self):
 		tonic_note = globals()[self.__class__.__name__]()
 		return [tonic_note, tonic_note.get_note_from_interval('3m'), tonic_note.get_note_from_interval('5P')]
+
 
 	def get_dis_chord(self):
 		return self.pitch + np.cumsum([0, half_tone+tone, half_tone+tone])
