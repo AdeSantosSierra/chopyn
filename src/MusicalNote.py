@@ -66,7 +66,63 @@ class MusicalNote(object):
 	def get_props(self):
 		return self.notes_props
 
-	
+	def get_play_props(self):
+		# Only those props useful to play music	
+		#print(self.notes_props['duration'])	
+		# print(dict((k, self.notes_props[k]) for k in ('pitch','duration','intensity','timbre') if k in self.notes_props))
+		return dict((k, self.notes_props[k]) for k in ('pitch','duration','intensity','timbre') if k in self.notes_props)
+
+	def update_props(self,new_notes_props):
+
+		if 'pitch' in new_notes_props:
+			self.notes_props.update({'pitch':new_notes_props['pitch']})
+			self.pitch = self.notes_props['pitch']
+
+		if 'duration' in new_notes_props:
+			self.notes_props.update({'duration':new_notes_props['duration']})
+			self.duration = self.notes_props['duration']
+
+		if 'intensity' in new_notes_props:
+			self.notes_props.update({'intensity':new_notes_props['intensity']})
+			self.intensity = self.notes_props['intensity']
+
+		if 'timbre' in new_notes_props:
+			self.notes_props.update({'timbre':new_notes_props['timbre']})
+			self.timbre = self.notes_props['timbre']
+
+
+	def get_note_from_interval(self,interval):
+
+		#print('get_note_from_interval')
+		#print(self.alteration)
+
+		base_note = self.__class__.__name__
+		
+		position_base_note = diatonic_scale.index(self.__class__.__name__)
+
+		# Dictionary with intervals definition
+		dic_interval_definition = {'3m':[tone, half_tone],'3M':[tone, tone], '5P':[tone, tone, half_tone, tone]}
+
+		# Estimate length of the interval (Ex. if '3m', length_interval = 2)
+		length_interval = len(dic_interval_definition[interval])
+
+		# Sum up all the tones within the wanted interval (Ex. if '3m', sum_interval = 3)
+		sum_interval = np.sum(dic_interval_definition[interval])
+
+		# Rotate distance_diatonic_scale accordingly
+		rotated_distances = distance_diatonic_scale[position_base_note:] + distance_diatonic_scale[:position_base_note]
+		rotated_diatonic_scale = diatonic_scale[(position_base_note+length_interval) % number_notes:] + diatonic_scale[:(position_base_note+length_interval) % number_notes]
+		sum_tones_interval = np.cumsum(rotated_distances)[length_interval % number_notes -1]
+
+		# Step 1: Obtain distance between base_note and the chord_note
+		chord_note = rotated_diatonic_scale[0]
+
+
+		correction = int(dic_alterations.keys()[dic_alterations.values().index(self.alteration)])
+		print(base_note+self.alteration+' - '+interval+' - '+chord_note+str(dic_alterations[str(sum_interval-sum_tones_interval+correction)]))
+		update_note_props = {'alteration':str(dic_alterations[str(sum_interval-sum_tones_interval+correction)])}
+							 #'pitch':self.pitch+correction}
+		return globals()[chord_note](**update_note_props)
 		
 
 
