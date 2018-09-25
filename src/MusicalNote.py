@@ -119,7 +119,7 @@ class MusicalNote(object):
 
 
 		correction = int(dic_alterations.keys()[dic_alterations.values().index(self.alteration)])
-		print(base_note+self.alteration+' - '+interval+' - '+chord_note+str(dic_alterations[str(sum_interval-sum_tones_interval+correction)]))
+		# print(base_note+self.alteration+' - '+interval+' - '+chord_note+str(dic_alterations[str(sum_interval-sum_tones_interval+correction)]))
 		update_note_props = {'alteration':str(dic_alterations[str(sum_interval-sum_tones_interval+correction)])}
 							 #'pitch':self.pitch+correction}
 		return globals()[chord_note](**update_note_props)
@@ -135,11 +135,9 @@ class MusicalNote(object):
 		tonic_note = globals()[self.__class__.__name__]()
 		return [tonic_note, tonic_note.get_note_from_interval('3M'), tonic_note.get_note_from_interval('5P')]
 
-
 	def get_minor_chord(self):
 		tonic_note = globals()[self.__class__.__name__]()
 		return [tonic_note, tonic_note.get_note_from_interval('3m'), tonic_note.get_note_from_interval('5P')]
-
 
 	def get_dis_chord(self):
 		return self.pitch + np.cumsum([0, half_tone+tone, half_tone+tone])
