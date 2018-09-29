@@ -18,26 +18,26 @@ class Tonality (object):
     # (3) Which is the Tonica/Dominant/... function of every note
 
     def __init__(self, Tonic):
-        # Tonic is the main note - This must be set as a parameter
-        self.tonalities = [Do, Re, Mi, Fa, Sol, La, Si]
+        # # Tonic is the main note - This must be set as a parameter
+        # self.tonalities = [Do, Re, Mi, Fa, Sol, La, Si]
 
-        # It would be easier to arrange the vector of tonalities based on the Tonic
-        # Ex. Tonic is Mi -> self.tonalities = [Mi, Fa, Sol, La, Si, Do, Re]
-        # Compare to I, II, III, and so forth
+        # # It would be easier to arrange the vector of tonalities based on the Tonic
+        # # Ex. Tonic is Mi -> self.tonalities = [Mi, Fa, Sol, La, Si, Do, Re]
+        # # Compare to I, II, III, and so forth
 
-        # Find the index of the Tonic within tonalities
-        index_Tonic = self.tonalities.index(Tonic)
+        # # Find the index of the Tonic within tonalities
+        # index_Tonic = self.tonalities.index(Tonic)
 
-        # These are the grades of the tonality
-        self.grades = (self.tonalities[index_Tonic:] + 
-                       self.tonalities[:index_Tonic])
+        # # These are the grades of the tonality
+        # self.grades = (self.tonalities[index_Tonic:] + 
+        #                self.tonalities[:index_Tonic])
 
         # Names of the sequences/grades I, II, III, IV, ...
         self.dict_grades_positions = {'I': 0, 'II': 1, 'III': 2, 'IV': 3, 'V': 4, 'VI': 5, 'VII': 6}
 
 
         # Which is the Tonic Note
-        self.tonic = globals()[self.grades[0].__name__]()
+        self.tonic = Tonic #globals()[self.grades[0].__name__]()
 
     def get_tonic(self):
         return self.tonic
@@ -62,7 +62,7 @@ class Major (Tonality):
         melody_sequence = []
 
         self.grades = self.get_tonic().get_major_scale()
-        print(type(self.grades[0]))
+        print([note.to_string() for note in self.grades])
 
         for grade in musical_sequence:
             # (1) Iterate every single grade within musical_sequence
@@ -81,6 +81,8 @@ class Major (Tonality):
                 notes_from_chord = main_note_from_grade.get_minor_chord()
 
 
+
+
             # (3) and (4) Play random music ONLY with notes from the chord
             melody_sequence.extend(np.random.choice(notes_from_chord, 
                                                     number_of_notes_per_compass, 
@@ -88,8 +90,8 @@ class Major (Tonality):
             #print(melody_sequence)
 
         # (5) First and Last note must be the Tonic
-        melody_sequence[0] = self.tonic
-        melody_sequence[-1] = self.tonic
+        melody_sequence[0] = self.get_tonic()
+        melody_sequence[-1] = self.get_tonic()
 
         # (6) Add properties (duration, intensity, timbre)
         melody_sequence_to_play = []
@@ -103,11 +105,10 @@ class Major (Tonality):
 
 if __name__ == '__main__':
     tonal = Tonality(Sol)
-    print(tonal.get_tonic())
 
-    do = Major(Mi)
+    do = Major(La(**{'alteration':'b'}))
     musical_sequence = ['I', 'V', 'VI', 'III', 'IV','I', 'IV', 'V', 'I']
-    number_of_notes_per_compass = 20
+    number_of_notes_per_compass = 10
     melody_sequence = do.create_music_from_grades_sequences(musical_sequence, 
                                                             number_of_notes_per_compass)
 
