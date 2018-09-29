@@ -137,12 +137,11 @@ class MusicalNote(object):
 	###################
 
 	def get_major_chord(self):
-		tonic_note = globals()[self.__class__.__name__]()
-		return [tonic_note, tonic_note.get_note_from_interval('3M'), tonic_note.get_note_from_interval('5P')]
+		# Arreglar esto para que se pueda hacer un acorde mayor apartir de una nota alterada
+		return [self, self.get_note_from_interval('3M'), self.get_note_from_interval('5P')]
 
 	def get_minor_chord(self):
-		tonic_note = globals()[self.__class__.__name__]()
-		return [tonic_note, tonic_note.get_note_from_interval('3m'), tonic_note.get_note_from_interval('5P')]
+		return [self, self.get_note_from_interval('3m'), self.get_note_from_interval('5P')]
 
 	def get_dis_chord(self):
 		return self.pitch + np.cumsum([0, half_tone+tone, half_tone+tone])
@@ -159,10 +158,11 @@ class MusicalNote(object):
 		# Iterate distance_major_scale
 		for idx, distance in enumerate(distance_major_scale):
 			if distance == tone:
-				tonic_scale.append(tonic_scale[idx].get_note_from_interval('2M'))
+				tonic_scale.append(tonic_scale[idx]
+				                   .get_note_from_interval('2M'))
 			else:
-				tonic_scale.append(tonic_scale[idx].get_note_from_interval('2m'))
-
+				tonic_scale.append(tonic_scale[idx]
+				                   .get_note_from_interval('2m'))
 		return tonic_scale
 
 
@@ -237,9 +237,10 @@ if __name__ == '__main__':
 	# print(Si(**{'alteration':'b'}).get_note_from_interval('5P').get_pitch())
 	# print('test')
 	# print(Do().get_note_from_interval('3m'))
-	# print(Do().get_note_from_interval('3m').get_pitch())
+	print(Do(**{'alteration':'#'}).get_note_from_interval('3M').to_string())
 	# print(Do().get_major_chord()[2].get_pitch())
 	escala = La(**{'alteration':'b'}).get_major_scale()
+	escala = La(**{'alteration':'b'}).get_major_chord()
 
 	for nota in escala:
 		print(nota.to_string())
