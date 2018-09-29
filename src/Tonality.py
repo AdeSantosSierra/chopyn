@@ -51,10 +51,8 @@ class Major (Tonality):
 		super(self.__class__, self).__init__(Tonic)
 
 
-	def create_music_from_grades_sequences(self):
+	def create_music_from_grades_sequences(self, musical_sequence, number_of_notes_per_compass):
 		
-		musical_sequence = ['I','V','VI','III','IV','I','IV','V','I']
-		number_of_notes_per_compass = 20
 
 		melody_sequence = []
 
@@ -94,7 +92,9 @@ if __name__ == '__main__':
 	print(tonal.get_tonic())
 
 	do = Major(Do)
-	melody_sequence = do.create_music_from_grades_sequences()
+	musical_sequence = ['I','V','VI','III','IV','I','IV','V','I']
+	number_of_notes_per_compass = 20
+	melody_sequence = do.create_music_from_grades_sequences(musical_sequence,number_of_notes_per_compass)
 
 	melody = SequenceMelody(melody_sequence)
 	CSVtoMIDI(melody.convert_to_midi())
