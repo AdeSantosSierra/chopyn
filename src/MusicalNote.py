@@ -153,7 +153,7 @@ class MusicalNote(object):
 
 	def get_major_scale(self):
 
-		tonic_scale = [globals()[self.__class__.__name__]()]
+		tonic_scale = [self]
 
 		# Iterate distance_major_scale
 		for idx, distance in enumerate(distance_major_scale):
@@ -239,8 +239,7 @@ if __name__ == '__main__':
 	# print(Do().get_note_from_interval('3m'))
 	print(Do(**{'alteration':'#'}).get_note_from_interval('3M').to_string())
 	# print(Do().get_major_chord()[2].get_pitch())
-	escala = La(**{'alteration':'b'}).get_major_scale()
-	escala = La(**{'alteration':'b'}).get_major_chord()
+	escala = Re(**{'alteration':'b'}).get_major_scale()
 
 	for nota in escala:
 		print(nota.to_string())
