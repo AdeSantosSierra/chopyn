@@ -11,14 +11,14 @@ class MusicalNote(object):
 	# Intensity (louder/soft)
 	# Timbre (instrument you use to play)
 
-	global half_tone, tone, number_notes, diatonic_scale, distance_diatonic_scale, dic_alterations
+	global half_tone, tone, number_notes, diatonic_scale, distance_major_scale, dic_alterations
 
 	# Config main properties of music
-	half_tone = 1
-	tone = 2
-	number_notes = 7
+	half_tone      = 1
+	tone           = 2
+	number_notes   = 7
 	diatonic_scale = ['Do','Re','Mi','Fa','Sol','La','Si']
-	distance_diatonic_scale = [tone, tone, half_tone, tone, tone, tone, half_tone]
+	distance_major_scale = [tone, tone, half_tone, tone, tone, tone, half_tone]
 	# dic_alterations = {'bb':-2,'b':-1,'n':0,'#':1,'x':2}
 	dic_alterations = {'-2':'bb','-1':'b','0':'','1':'#','2':'x'}
 
@@ -101,7 +101,9 @@ class MusicalNote(object):
 		position_base_note = diatonic_scale.index(self.__class__.__name__)
 
 		# Dictionary with intervals definition
-		dic_interval_definition = {'3m':[tone, half_tone],'3M':[tone, tone], '5P':[tone, tone, half_tone, tone]}
+		dic_interval_definition = ({'3m':[tone, half_tone],'3M':[tone, tone], 
+		                           '5P':[tone, tone, half_tone, tone], 
+		                           '2M':[tone], '2m':[half_tone]})
 
 		# Estimate length of the interval (Ex. if '3m', length_interval = 2)
 		length_interval = len(dic_interval_definition[interval])
@@ -109,8 +111,8 @@ class MusicalNote(object):
 		# Sum up all the tones within the wanted interval (Ex. if '3m', sum_interval = 3)
 		sum_interval = np.sum(dic_interval_definition[interval])
 
-		# Rotate distance_diatonic_scale accordingly
-		rotated_distances = distance_diatonic_scale[position_base_note:] + distance_diatonic_scale[:position_base_note]
+		# Rotate distance_major_scale accordingly
+		rotated_distances = distance_major_scale[position_base_note:] + distance_major_scale[:position_base_note]
 		rotated_diatonic_scale = diatonic_scale[(position_base_note+length_interval) % number_notes:] + diatonic_scale[:(position_base_note+length_interval) % number_notes]
 		sum_tones_interval = np.cumsum(rotated_distances)[length_interval % number_notes -1]
 
@@ -130,6 +132,9 @@ class MusicalNote(object):
 		# Combine the name of the note (Do, Re, ...) with their corresponding alteration if any
 		return self.__class__.__name__+self.alteration
 
+	###################	
+	# Chords
+	###################
 
 	def get_major_chord(self):
 		tonic_note = globals()[self.__class__.__name__]()
@@ -141,6 +146,25 @@ class MusicalNote(object):
 
 	def get_dis_chord(self):
 		return self.pitch + np.cumsum([0, half_tone+tone, half_tone+tone])
+
+
+	###################	
+	# Scales
+	###################
+
+	def get_major_scale(self):
+
+		tonic_scale = [globals()[self.__class__.__name__]()]
+
+		# Iterate distance_major_scale
+		for idx, distance in enumerate(distance_major_scale):
+			if distance == tone:
+				tonic_scale.append(tonic_scale[idx].get_note_from_interval('2M'))
+			else:
+				tonic_scale.append(tonic_scale[idx].get_note_from_interval('2m'))
+
+		return tonic_scale
+
 
 
 class Do(MusicalNote):
@@ -210,9 +234,13 @@ class Si(MusicalNote):
 
 if __name__ == '__main__':
 	do_props = {'duration':100, 'intensity':50, 'timbre':1}
-	print(Si(**{'alteration':'b'}).get_note_from_interval('5P').get_pitch())
-	print('test')
-	print(Do().get_note_from_interval('3m'))
-	print(Do().get_note_from_interval('3m').get_pitch())
-	print(Do().get_major_chord()[2].get_pitch())
+	# print(Si(**{'alteration':'b'}).get_note_from_interval('5P').get_pitch())
+	# print('test')
+	# print(Do().get_note_from_interval('3m'))
+	# print(Do().get_note_from_interval('3m').get_pitch())
+	# print(Do().get_major_chord()[2].get_pitch())
+	escala = La(**{'alteration':'b'}).get_major_scale()
+
+	for nota in escala:
+		print(nota.to_string())
 	
