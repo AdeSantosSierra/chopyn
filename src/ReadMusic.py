@@ -63,7 +63,7 @@ def _get_note_name_without_octave(fullNoteOctave):
 		return fullNoteOctave[0]
 
 if __name__ == "__main__":
-	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
+	name_file_midi = '../../scores/Albeniz_Asturias.csv'
 	chopin = Read(name_file_midi)
 	# print(chopin.get_music_data().head())
 	print(chopin.get_most_common_note())
