@@ -25,6 +25,7 @@ class Read(Score):
 		self.music_df = pd.read_csv(name_file_midi)
 		# Calculate attribute name_note
 		self.calculate_name_note()
+		self.divide_music_with_most_granular_tick()
 
 	def get_music_data(self):
 		return self.music_df
@@ -56,10 +57,36 @@ class Read(Score):
 		      .head(1)['name_note'][0]
 		      )
 
-	def get_most_granular_tick(self):
+	def divide_music_with_most_granular_tick(self):
 
-		print((Counter(self.music_df['start_ticks'].diff())))
-		print(np.sort(Counter(self.music_df['start_ticks'].diff()).keys()))
+		# Obtain the histograms of ticks
+		# Counter({80.0: 946, 0.0: 642, 40.0: 15, 240.0: 8, 60.0: 6, 20.0: 3, 480.0: 2, 120.0: 2, nan: 1, 160.0: 1, 300.0: 1, 360.0: 1})
+		hist_ticks = Counter(self.music_df['start_ticks'].diff())
+		# Take the minimum_tick different from 0
+		# [  0.  20.  40.  60.  80. 120. 160. 240. 300. 360. 480.  nan]
+		# In this case, it is 20.
+		minimum_tick = int([ticks for ticks in np.sort(hist_ticks.keys()) if ticks > 0][0])
+
+		# Divide music with minimum_tick
+
+		self.music_df['num_minimum_ticks'] = \
+		((self.music_df['dur_ticks']+1) / minimum_tick)
+
+		granular_music_list = list()
+
+		for index, iter_note in self.music_df.iterrows():
+			for iter_num_minimum_ticks in range(int(iter_note['num_minimum_ticks'])):
+				granular_music_list.append(([iter_note['start_ticks']+(iter_num_minimum_ticks)*minimum_tick,
+				                          iter_note['pitch'],iter_note['velocity'],
+				                          iter_note['part'],iter_note['fullNoteOctave'],
+				                          iter_note['name_note']]
+				                          ))
+
+		self.granular_music_df = (pd.DataFrame(granular_music_list,
+		                                  columns = ['start_ticks','pitch','velocity','part',
+		                                  'fullNoteOctave','name_note']))
+
+
 
 	def get_chord_from_tick(self):
 		# Given a sequence of notes such as:
@@ -77,12 +104,16 @@ class Read(Score):
 		# 240,258,119,128,54,F3#,96,2
 
 		# This method will extract the chords for 0, 80, 160, 240 and so forth.
-		print(self.music_df
+		print(self.granular_music_df.head(40))
+
+		print(self.granular_music_df
 		      .groupby('start_ticks')
 		      .agg({'fullNoteOctave':lambda x: Counter(x),
 		           'name_note':lambda x: Counter(x)}
 		           )
 		      .reset_index()
+		      .filter(['start_ticks','name_note'])
+		      .head(60)
 		      )
 
 		
@@ -98,6 +129,7 @@ def _get_note_name_without_octave(fullNoteOctave):
 
 if __name__ == "__main__":
 	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_5.csv'
+	#name_file_midi = '../../scores/Chopin_Etude_Op_10_n_1.csv'
 	chopin = Read(name_file_midi)
 	# print(chopin.get_music_data().head())
 	print(chopin.get_most_common_note())
