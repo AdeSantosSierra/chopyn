@@ -231,16 +231,4 @@ class Si(MusicalNote):
 		notes_props.update({'pitch':71})
 		super(self.__class__, self).__init__(**notes_props)
 
-
-if __name__ == '__main__':
-	do_props = {'duration':100, 'intensity':50, 'timbre':1}
-	# print(Si(**{'alteration':'b'}).get_note_from_interval('5P').get_pitch())
-	# print('test')
-	# print(Do().get_note_from_interval('3m'))
-	print(Do(**{'alteration':'#'}).get_note_from_interval('3M').to_string())
-	# print(Do().get_major_chord()[2].get_pitch())
-	escala = Re(**{'alteration':'b'}).get_major_scale()
-
-	for nota in escala:
-		print(nota.to_string())
 	
