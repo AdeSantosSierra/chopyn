@@ -6,7 +6,6 @@ from melody import *
 from Play import CSVtoMIDI
 
 import numpy as np
-from collections import deque
 
 # Tonality
 # Two types of tonalities: Major and Minor
@@ -18,26 +17,13 @@ class Tonality (object):
     # (3) Which is the Tonica/Dominant/... function of every note
 
     def __init__(self, Tonic):
-        # # Tonic is the main note - This must be set as a parameter
-        # self.tonalities = [Do, Re, Mi, Fa, Sol, La, Si]
-
-        # # It would be easier to arrange the vector of tonalities based on the Tonic
-        # # Ex. Tonic is Mi -> self.tonalities = [Mi, Fa, Sol, La, Si, Do, Re]
-        # # Compare to I, II, III, and so forth
-
-        # # Find the index of the Tonic within tonalities
-        # index_Tonic = self.tonalities.index(Tonic)
-
-        # # These are the grades of the tonality
-        # self.grades = (self.tonalities[index_Tonic:] + 
-        #                self.tonalities[:index_Tonic])
+        # Tonic is the main note - This must be set as a parameter
 
         # Names of the sequences/grades I, II, III, IV, ...
         self.dict_grades_positions = {'I': 0, 'II': 1, 'III': 2, 'IV': 3, 'V': 4, 'VI': 5, 'VII': 6}
 
-
         # Which is the Tonic Note
-        self.tonic = Tonic #globals()[self.grades[0].__name__]()
+        self.tonic = Tonic 
 
     def get_tonic(self):
         return self.tonic
