@@ -104,17 +104,15 @@ class Read(Score):
 		# 240,258,119,128,54,F3#,96,2
 
 		# This method will extract the chords for 0, 80, 160, 240 and so forth.
-		print(self.granular_music_df.head(40))
 
-		print(self.granular_music_df
+		return (self.granular_music_df
 		      .groupby('start_ticks')
 		      .agg({'fullNoteOctave':lambda x: Counter(x),
 		           'name_note':lambda x: Counter(x)}
 		           )
 		      .reset_index()
-		      .filter(['start_ticks','name_note'])
-		      .head(60)
 		      )
+		# Do not forget the aggregated time pero granular chord.
 
 		
 
