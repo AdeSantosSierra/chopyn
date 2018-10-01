@@ -67,6 +67,8 @@ class Read(Score):
 		# In this case, it is 20.
 		minimum_tick = int([ticks for ticks in np.sort(hist_ticks.keys()) if ticks > 0][0])
 
+		self.minimum_tick = minimum_tick
+
 		# Divide music with minimum_tick
 
 		self.music_df['num_minimum_ticks'] = \
@@ -108,14 +110,98 @@ class Read(Score):
 		return (self.granular_music_df
 		      .groupby('start_ticks')
 		      .agg({'fullNoteOctave':lambda x: Counter(x),
+		           # 'name_note':lambda x: tuple(dict(Counter(x)).keys())}
 		           'name_note':lambda x: Counter(x)}
 		           )
 		      .reset_index()
 		      )
 		# Do not forget the aggregated time pero granular chord.
 
-		
+	def aggregate_chord_from_tick(self):
+		# Given a sequence of notes such as:
+		# {u'F2#': 1, u'F1#': 1, u'F3#': 1}
+		# {u'F2#': 1, u'F1#': 1, u'F3#': 1}
+		# {u'F2#': 1, u'F1#': 1, u'F3#': 1}
+		# {u'F2#': 1, u'F1#': 1, u'F3#': 1}
+		# {u'F2#': 1, u'F1#': 1, u'F3#': 1}
+		# {u'F2#': 1, u'F4#': 1, u'F3#': 1}
+		# {u'F2#': 1, u'F4#': 2, u'F3#': 1}
 
+		# The result must be
+		# {u'F2#': 5, u'F1#': 5, u'F3#': 5}
+		# {u'F2#': 2, u'F4#': 3, u'F3#': 2}
+
+		# First of all calculate chord per ticks
+		chord_per_ticks = self.get_chord_from_tick()
+
+		aggregation_criteria = 'fullNoteOctave'
+
+		# See the changes in chord per ticks
+		changes_in_chords = chord_per_ticks[aggregation_criteria].diff()
+		# Since the first element is Nan, force it to be {}
+		# It is {} since we are working with dicts
+		changes_in_chords[0] = {}
+
+		# Store the final column into id_aggregation_criteria
+		chord_per_ticks['id_aggregation_criteria'] = np.cumsum([len(element)>0 for element in changes_in_chords])
+
+
+
+		aggregated_chord_per_ticks = (chord_per_ticks
+		      .groupby(['id_aggregation_criteria',
+		               chord_per_ticks[aggregation_criteria].map(tuple)])
+		      .agg({'start_ticks':['min','max']
+		           }
+		           )
+		      .reset_index()
+		      #.sort_values('start_ticks',ascending=False)
+		      )
+
+		# Rename the columns
+		aggregated_chord_per_ticks.columns = ['_'.join(col) for col in aggregated_chord_per_ticks.columns]
+
+		# Number of notes of the chord according to aggregation_criteria
+		aggregated_chord_per_ticks['num_elements_chord'] = \
+		aggregated_chord_per_ticks[aggregation_criteria+'_'].apply(len)
+
+		# Length in time (ticks) of the chord
+		aggregated_chord_per_ticks['time_length_chord'] = \
+		aggregated_chord_per_ticks['start_ticks_max']-aggregated_chord_per_ticks['start_ticks_min']+self.minimum_tick
+
+
+		# Analyze those notes that are not individual notes
+		tonic_chord_candidates = \
+		(aggregated_chord_per_ticks
+		      #.loc[aggregated_chord_per_ticks['num_elements_chord']==4]
+		      .groupby(aggregation_criteria+'_')
+		      .agg({'time_length_chord':'sum'})
+		      .filter([aggregation_criteria+'_','time_length_chord'])
+		      .sort_values('time_length_chord',ascending=False)
+		      .reset_index()
+		      )
+		
+		tonic_chord_candidates['n_elmnts_chord'] = tonic_chord_candidates[aggregation_criteria+'_'].apply(len)
+		tonic_chord_candidates['imp'] = tonic_chord_candidates['n_elmnts_chord']*100+tonic_chord_candidates['time_length_chord']
+
+		tonic_chord_candidates.columns = ['notes','ticks','num_el','imp']
+
+		print(tonic_chord_candidates
+		      .groupby('num_el')
+		      .size()
+		      )
+
+		print(tonic_chord_candidates
+		      .groupby('ticks')
+		      .size()
+		      )
+
+		print(tonic_chord_candidates
+		      .sort_values(['imp'],ascending=False)
+		      .filter(['notes','num_el','imp','ticks'])
+		      .head(10)
+		      )
+
+		
 def _get_note_name_without_octave(fullNoteOctave):
 	# Function to get the name, regardless the octave
 	if len(fullNoteOctave) == 3:
@@ -126,11 +212,16 @@ def _get_note_name_without_octave(fullNoteOctave):
 		return fullNoteOctave[0]
 
 if __name__ == "__main__":
+	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
+	name_file_midi = '../../scores/Albeniz_Asturias.csv'
+	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_1.csv'
+	name_file_midi = '../../scores/Beethoven_Moonlight_Sonata_third_movement.csv'
 	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_5.csv'
-	#name_file_midi = '../../scores/Chopin_Etude_Op_10_n_1.csv'
+	
 	chopin = Read(name_file_midi)
 	# print(chopin.get_music_data().head())
-	print(chopin.get_most_common_note())
-	print(chopin.get_chord_from_tick())
+	#print(chopin.get_most_common_note())
+	#print(chopin.get_chord_from_tick().filter(['fullNoteOctave']))
+	print(chopin.aggregate_chord_from_tick())
 
 
