@@ -54,7 +54,7 @@ class Read(Score):
 		      .sort_values(['cum_duration'],ascending=False)
 		      .reset_index()
 		      # Take the first element and the corresponding column
-		      .head(1)['name_note'][0]
+		      #.head(10)['name_note'][0:10]
 		      )
 
 	def divide_music_with_most_granular_tick(self):
@@ -204,24 +204,27 @@ class Read(Score):
 		
 def _get_note_name_without_octave(fullNoteOctave):
 	# Function to get the name, regardless the octave
+
+	notes_dict = {'A':'La','B':'Si','C':'Do','D':'Re','E':'Mi','F':'Fa','G':'Sol'}
+
 	if len(fullNoteOctave) == 3:
 		# Names can be F3#, A2#, then return F# and A#
-		return fullNoteOctave[::2]
+		return notes_dict[fullNoteOctave[0]]+fullNoteOctave[2]
 	else:
 		# Names can be F3, A2, then return F and A
-		return fullNoteOctave[0]
+		return notes_dict[fullNoteOctave[0]]
 
 if __name__ == "__main__":
-	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
-	name_file_midi = '../../scores/Albeniz_Asturias.csv'
 	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_1.csv'
 	name_file_midi = '../../scores/Beethoven_Moonlight_Sonata_third_movement.csv'
+	name_file_midi = '../../scores/Albeniz_Asturias.csv'
+	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
 	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_5.csv'
 	
 	chopin = Read(name_file_midi)
 	# print(chopin.get_music_data().head())
-	#print(chopin.get_most_common_note())
 	#print(chopin.get_chord_from_tick().filter(['fullNoteOctave']))
 	print(chopin.aggregate_chord_from_tick())
+	print(chopin.get_most_common_note())
 
 
