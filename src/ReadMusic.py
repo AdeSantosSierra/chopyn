@@ -9,7 +9,7 @@ from Tonality import *
 import numpy as np
 import pandas as pd
 
-from collections import Counter
+from collections import Counter, OrderedDict
 
 
 class Score(object):
@@ -54,8 +54,54 @@ class Read(Score):
 		      .sort_values(['cum_duration'],ascending=False)
 		      .reset_index()
 		      # Take the first element and the corresponding column
-		      #.head(10)['name_note'][0:10]
+		      .head(1)['name_note'][0]
 		      )
+
+
+	def get_tonality(self):
+		tonalities = \
+					 ({'Do':['Do','Re','Mi','Fa','Sol','La','Si'],
+		               'Re':['Do#','Re','Mi','Fa#','Sol','La','Si'],
+		               #'Reb':['Do','Reb','Mib','Fa','Solb','Lab','Sib'],
+		               'Reb':['Do','Do#','Re#','Fa','Fa#','Sol#','La#'],
+		               'Mi':['Do#','Re#','Mi','Fa#','Sol#','La','Si'],
+		               #'Mib':['Do','Re','Mib','Fa','Sol','Lab','Sib'],
+		               'Mib':['Do','Re','Re#','Fa','Sol','Sol#','La#'],
+		               'Fa':['Do','Re','Mi','Fa','Sol','La','La#'],
+		               'Fa#':['Do#','Re#','Fa','Fa#','Sol#','La#','Si'],
+		               'Sol':['Do','Re','Mi','Fa#','Sol','La','Si'],
+		               #'Solb':['Si','Reb','Mib','Fa','Solb','Lab','Sib'],
+		               'Solb':['Si','Do#','Re#','Fa','Fa#','Sol#','La#'],
+		               'La':['Do#','Re','Mi','Fa#','Sol#','La','Si'],
+		               #'Lab':['Do','Reb','Mib','Fa','Sol','Lab','Sib'],
+		               'Lab':['Do','Do#','Re#','Fa','Sol','Sol#','La#'],
+		               'Si':['Do#','Re#','Mi','Fa#','Sol#','La#','Si'],
+		               #'Sib':['Do','Re','Mib','Fa','Sol','La','Sib'],
+		               'Sib':['Do','Re','Re#','Fa','Sol','La','La#'],
+		              })
+
+		note_histogram = \
+			(self
+		      .music_df
+		      # Group by name of the note (A, F#, ...)
+		      .groupby(['name_note'])
+		      # Take the total length that note has been played
+		      .agg({'dur_ms':sum})
+		      .rename(columns={'dur_ms': 'cum_duration'})
+		      # Order in descending manner
+		      .sort_values(['cum_duration'],ascending=False)
+		      .reset_index()
+		      # Take the first element and the corresponding column
+		      #.head(10)['name_note'][0:10]
+		      ).set_index('name_note')['cum_duration'].to_dict()
+
+		tonality_candidates = {}
+		for tonality_name, tonality_scale in tonalities.iteritems():
+			tonality_candidates[tonality_name] = np.sum([note_histogram.get(iter_tonality_scale,0) 
+			                                            for iter_tonality_scale in tonality_scale])
+
+		return next(iter(OrderedDict(sorted(tonality_candidates.items(), key=lambda t: -t[1]))))	
+
 
 	def divide_music_with_most_granular_tick(self):
 
@@ -185,21 +231,21 @@ class Read(Score):
 
 		tonic_chord_candidates.columns = ['notes','ticks','num_el','imp']
 
-		print(tonic_chord_candidates
-		      .groupby('num_el')
-		      .size()
-		      )
+		# print(tonic_chord_candidates
+		#       .groupby('num_el')
+		#       .size()
+		#       )
 
-		print(tonic_chord_candidates
-		      .groupby('ticks')
-		      .size()
-		      )
+		# print(tonic_chord_candidates
+		#       .groupby('ticks')
+		#       .size()
+		#       )
 
-		print(tonic_chord_candidates
-		      .sort_values(['imp'],ascending=False)
-		      .filter(['notes','num_el','imp','ticks'])
-		      .head(10)
-		      )
+		# print(tonic_chord_candidates
+		#       .sort_values(['imp'],ascending=False)
+		#       .filter(['notes','num_el','imp','ticks'])
+		#       .head(10)
+		#       )
 
 		
 def _get_note_name_without_octave(fullNoteOctave):
@@ -216,15 +262,19 @@ def _get_note_name_without_octave(fullNoteOctave):
 
 if __name__ == "__main__":
 	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_1.csv'
-	name_file_midi = '../../scores/Beethoven_Moonlight_Sonata_third_movement.csv'
 	name_file_midi = '../../scores/Albeniz_Asturias.csv'
-	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
 	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_5.csv'
+	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
+	name_file_midi = '../../scores/Schuber_Impromptu_D_899_No_3.csv'
+	name_file_midi = '../../scores/Schubert_S560_Schwanengesang_no7.csv'
+	name_file_midi = '../../scores/Schubert_Piano_Trio_2nd_Movement.csv'
+	name_file_midi = '../../scores/Beethoven_Moonlight_Sonata_third_movement.csv'
 	
 	chopin = Read(name_file_midi)
 	# print(chopin.get_music_data().head())
 	#print(chopin.get_chord_from_tick().filter(['fullNoteOctave']))
-	print(chopin.aggregate_chord_from_tick())
+	#print(chopin.aggregate_chord_from_tick())
 	print(chopin.get_most_common_note())
+	print('La tonalidad es: '+chopin.get_tonality())
 
 
