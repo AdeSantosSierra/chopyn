@@ -68,9 +68,10 @@ class Read(Score):
 		               #'Mib':['Do','Re','Mib','Fa','Sol','Lab','Sib'],
 		               'Mib':['Do','Re','Re#','Fa','Sol','Sol#','La#'],
 		               'Fa':['Do','Re','Mi','Fa','Sol','La','La#'],
-		               'Fa#':['Do#','Re#','Fa','Fa#','Sol#','La#','Si'],
+		               # Fa# is the same as Solb
+		               #'Fa#':['Do#','Re#','Fa','Fa#','Sol#','La#','Si'],
 		               'Sol':['Do','Re','Mi','Fa#','Sol','La','Si'],
-		               #'Solb':['Si','Reb','Mib','Fa','Solb','Lab','Sib'],
+		               #'Solb':['Dob','Reb','Mib','Fa','Solb','Lab','Sib'],
 		               'Solb':['Si','Do#','Re#','Fa','Fa#','Sol#','La#'],
 		               'La':['Do#','Re','Mi','Fa#','Sol#','La','Si'],
 		               #'Lab':['Do','Reb','Mib','Fa','Sol','Lab','Sib'],
@@ -269,6 +270,9 @@ if __name__ == "__main__":
 	name_file_midi = '../../scores/Schubert_S560_Schwanengesang_no7.csv'
 	name_file_midi = '../../scores/Schubert_Piano_Trio_2nd_Movement.csv'
 	name_file_midi = '../../scores/Beethoven_Moonlight_Sonata_third_movement.csv'
+	name_file_midi = '../../scores/Bach-Partita_No1_in_Bb_BWV825_7Gigue.csv'
+	name_file_midi = '../../scores/Brahms_symphony_2_2.csv' # Si M
+	name_file_midi = '../../scores/Brahms_symphony_2_1.csv'
 	
 	chopin = Read(name_file_midi)
 	# print(chopin.get_music_data().head())
