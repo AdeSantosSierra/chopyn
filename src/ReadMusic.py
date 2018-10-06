@@ -361,15 +361,15 @@ def _convert_note_into_grade(chord_tuple):
 if __name__ == "__main__":
 
 	name_file_midi = '../../scores/Schubert_S560_Schwanengesang_no7.csv'
-	#name_file_midi = '../../scores/Beethoven_Moonlight_Sonata_third_movement.csv'
 	name_file_midi = '../../scores/Brahms_symphony_2_2.csv' # Si M
 	name_file_midi = '../../scores/Brahms_symphony_2_1.csv'
 	name_file_midi = '../../scores/Bach-Partita_No1_in_Bb_BWV825_7Gigue.csv'
 	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
-	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_1.csv'
 	name_file_midi = '../../scores/Albeniz_Asturias.csv'
 	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_5.csv'
 	name_file_midi = '../../scores/Schuber_Impromptu_D_899_No_3.csv'
+	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_1.csv'
+	#name_file_midi = '../../scores/Beethoven_Moonlight_Sonata_third_movement.csv'
 	#name_file_midi = '../../scores/Schubert_Piano_Trio_2nd_Movement.csv'
 	
 	chopin = Read(name_file_midi)
