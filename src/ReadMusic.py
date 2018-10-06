@@ -20,6 +20,16 @@ logger.setLevel('INFO')
 logger.warning('Protocol problem: %s', 'connection reset')
 
 
+import sys
+# import folders with the code
+# At the moment, there is not other way of importing 
+
+# Importing files from c-rnn-gan to read music
+# sys.path.insert(0, '/Users/adesant3/Documents/Kindergarten/chopyn/c-rnn-gan')
+# from music_data_utils import *
+
+
+
 class Score(object):
 
 	pass
@@ -237,25 +247,13 @@ class Read(Score):
 		      )
 		
 		tonic_chord_candidates['n_elmnts_chord'] = tonic_chord_candidates[aggregation_criteria+'_'].apply(len)
-		tonic_chord_candidates['imp'] = tonic_chord_candidates['n_elmnts_chord']*100+tonic_chord_candidates['time_length_chord']
 
-		tonic_chord_candidates.columns = ['notes','ticks','num_el','imp']
+		tonic_chord_candidates.columns = ['notes','ticks','num_el']
 
-		# print(tonic_chord_candidates
-		#       .groupby('num_el')
-		#       .size()
-		#       )
+		aggregated_chord_per_ticks.columns = \
+		['seq_id', aggregation_criteria, 'min_tick','max_tick', 'len', 'time']
 
-		# print(tonic_chord_candidates
-		#       .groupby('ticks')
-		#       .size()
-		#       )
-
-		# print(tonic_chord_candidates
-		#       .sort_values(['imp'],ascending=False)
-		#       .filter(['notes','num_el','imp','ticks'])
-		#       .head(10)
-		#       )
+		return aggregated_chord_per_ticks
 
 		
 def _get_note_name_without_octave(fullNoteOctave):
@@ -271,23 +269,24 @@ def _get_note_name_without_octave(fullNoteOctave):
 		return notes_dict[fullNoteOctave[0]]
 
 if __name__ == "__main__":
-	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_1.csv'
+
+
 	name_file_midi = '../../scores/Albeniz_Asturias.csv'
 	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_5.csv'
-	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
 	name_file_midi = '../../scores/Schuber_Impromptu_D_899_No_3.csv'
 	name_file_midi = '../../scores/Schubert_S560_Schwanengesang_no7.csv'
 	name_file_midi = '../../scores/Schubert_Piano_Trio_2nd_Movement.csv'
 	name_file_midi = '../../scores/Beethoven_Moonlight_Sonata_third_movement.csv'
-	name_file_midi = '../../scores/Bach-Partita_No1_in_Bb_BWV825_7Gigue.csv'
 	name_file_midi = '../../scores/Brahms_symphony_2_2.csv' # Si M
 	name_file_midi = '../../scores/Brahms_symphony_2_1.csv'
+	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_1.csv'
+	name_file_midi = '../../scores/Bach-Partita_No1_in_Bb_BWV825_7Gigue.csv'
+	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
 	
 	chopin = Read(name_file_midi)
 	# print(chopin.get_music_data().head())
 	#print(chopin.get_chord_from_tick().filter(['fullNoteOctave']))
-	#print(chopin.aggregate_chord_from_tick())
-	print(chopin.get_most_common_note())
+	print(chopin.aggregate_chord_from_tick())
 	print('La tonalidad es: '+chopin.get_tonality())
 
 
