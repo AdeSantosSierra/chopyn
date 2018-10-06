@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 
 from collections import Counter, OrderedDict
+import itertools
 
 import logging
 FORMAT = '%(asctime)-15s %(message)s'
@@ -122,6 +123,71 @@ class Read(Score):
 
 		return next(iter(OrderedDict(sorted(tonality_candidates.items(), key=lambda t: -t[1]))))	
 
+	def apply_tonality(self):
+
+		map_tonic_with_scale = \
+					 ({'Do':['Do','Re','Mi','Fa','Sol','La','Si'],
+		               'Re':['Do#','Re','Mi','Fa#','Sol','La','Si'],
+		               'Reb':['Do','Reb','Mib','Fa','Solb','Lab','Sib'],
+		               'Mi':['Do#','Re#','Mi','Fa#','Sol#','La','Si'],
+		               'Mib':['Do','Re','Mib','Fa','Sol','Lab','Sib'],
+		               'Fa':['Do','Re','Mi','Fa','Sol','La','Sib'],
+		               # Fa# is the same as Solb
+		               'Sol':['Do','Re','Mi','Fa#','Sol','La','Si'],
+		               'Solb':['Dob','Reb','Mib','Fa','Solb','Lab','Sib'],
+		               'La':['Do#','Re','Mi','Fa#','Sol#','La','Si'],
+		               'Lab':['Do','Reb','Mib','Fa','Sol','Lab','Sib'],
+		               'Si':['Do#','Re#','Mi','Fa#','Sol#','La#','Si'],
+		               'Sib':['Do','Re','Mib','Fa','Sol','La','Sib'],
+		              })
+
+		map_note_with_alias = \
+						{'Do#':'Reb', 'Reb':'Do#',
+						 'Re#':'Mib', 'Mib':'Re#',
+						 'Fa':'Mi#', 'Mi#':'Fa',
+						 'Fa#':'Solb', 'Solb':'Fa#',
+						 'Sol#':'Lab',  'Lab':'Sol#',
+						 'La#':'Sib',  'Sib':'La#',
+						 'Si#':'Do',  'Do':'Si#',
+						}
+
+		# Return the aggregates of the chord and their sequence
+		agg_criteria = 'name_note'
+		chord_df = self.aggregate_chord_from_tick(aggregation_criteria = agg_criteria)
+		all_notes = list(np.unique(list(itertools.chain(*chord_df[agg_criteria]))))
+
+		tonic = self.get_tonality()
+
+		# Find the intersection between notes in the scale and notes in the piece of music
+		tonic_scale_notes = map_tonic_with_scale[tonic]
+		common_notes = list(set(tonic_scale_notes) & set(all_notes))
+		missing_notes_in_scale = list(set(tonic_scale_notes) - set(common_notes))
+		# print(common_notes)
+		# print(missing_notes_in_scale)
+
+		# Convert notes in music to the closest in tonic scale
+		renamed_missing_notes = \
+							([map_note_with_alias[renamed_notes] 
+		                     for renamed_notes in missing_notes_in_scale 
+		                     if renamed_notes in map_note_with_alias.keys()]
+		                     )
+
+
+		# Apply the mapping transformation to the remaining notes
+		chord_df['renamed_note'] = \
+		(chord_df[agg_criteria]
+		 .apply(lambda tuple_x: 
+		        tuple([map_note_with_alias[renamed_notes] 
+		              if renamed_notes in renamed_missing_notes 
+		              else renamed_notes
+		              for renamed_notes in tuple_x
+		              ])))
+
+		return chord_df
+
+		
+
+
 
 	def divide_music_with_most_granular_tick(self):
 
@@ -183,7 +249,11 @@ class Read(Score):
 		      )
 		# Do not forget the aggregated time pero granular chord.
 
-	def aggregate_chord_from_tick(self):
+	def aggregate_chord_from_tick(self, aggregation_criteria = 'name_note'):
+
+		# The other option for aggregation_criteria is:
+		# aggregation_criteria = 'fullNoteOctave'
+
 		# Given a sequence of notes such as:
 		# {u'F2#': 1, u'F1#': 1, u'F3#': 1}
 		# {u'F2#': 1, u'F1#': 1, u'F3#': 1}
@@ -199,8 +269,6 @@ class Read(Score):
 
 		# First of all calculate chord per ticks
 		chord_per_ticks = self.get_chord_from_tick()
-
-		aggregation_criteria = 'fullNoteOctave'
 
 		# See the changes in chord per ticks
 		changes_in_chords = chord_per_ticks[aggregation_criteria].diff()
@@ -268,8 +336,14 @@ def _get_note_name_without_octave(fullNoteOctave):
 		# Names can be F3, A2, then return F and A
 		return notes_dict[fullNoteOctave[0]]
 
-if __name__ == "__main__":
+def _convert_note_into_grade(chord_tuple):
+	# Function to convert a chord such as (F4#, C5#, F5, A4) into 
+	# grade functionalities (II,III,I,IV) for instance.
+	# In this way, music is normalized and harmonic structure may be learned.
 
+	tonality = self.get_tonality()
+
+if __name__ == "__main__":
 
 	name_file_midi = '../../scores/Albeniz_Asturias.csv'
 	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_5.csv'
@@ -279,14 +353,15 @@ if __name__ == "__main__":
 	name_file_midi = '../../scores/Beethoven_Moonlight_Sonata_third_movement.csv'
 	name_file_midi = '../../scores/Brahms_symphony_2_2.csv' # Si M
 	name_file_midi = '../../scores/Brahms_symphony_2_1.csv'
-	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_1.csv'
 	name_file_midi = '../../scores/Bach-Partita_No1_in_Bb_BWV825_7Gigue.csv'
+	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_1.csv'
 	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
 	
 	chopin = Read(name_file_midi)
 	# print(chopin.get_music_data().head())
 	#print(chopin.get_chord_from_tick().filter(['fullNoteOctave']))
-	print(chopin.aggregate_chord_from_tick())
 	print('La tonalidad es: '+chopin.get_tonality())
+	print(chopin.aggregate_chord_from_tick())
+	print(chopin.apply_tonality())
 
 
