@@ -60,6 +60,15 @@ class Read(Score):
 		        _get_note_name_without_octave(x['fullNoteOctave']), axis=1)
 		 )
 
+		# Names can be F3#, A2#, then return F# and A#
+		# Names can be F3, A2, then return F and A
+		self.music_df['octave_name_note'] = \
+		(self.music_df
+		 .apply(lambda x:
+		        _get_note_name_with_octave(x['fullNoteOctave']), axis=1)
+		 )
+
+
 
 	def get_most_common_note(self):
 
@@ -154,9 +163,13 @@ class Read(Score):
 		grades = ['I','II','III','IV','V','VI','VII']
 
 		# Return the aggregates of the chord and their sequence
-		agg_criteria = 'name_note'
+		agg_criteria = 'fullNoteOctave'
+		print(self.granular_music_df)
 		chord_df = self.aggregate_chord_from_tick(aggregation_criteria = agg_criteria)
+		
 		all_notes = list(np.unique(list(itertools.chain(*chord_df[agg_criteria]))))
+
+		print(all_notes)
 
 		tonic = self.get_tonality()
 
@@ -185,6 +198,7 @@ class Read(Score):
 		              for renamed_notes in tuple_x
 		              ])))
 
+		# Convert chord into grades
 		chord_df['grades'] = \
 		(chord_df['chord']
 		 .apply(lambda tuple_x:
@@ -228,14 +242,12 @@ class Read(Score):
 				granular_music_list.append(([iter_note['start_ticks']+(iter_num_minimum_ticks)*minimum_tick,
 				                          iter_note['pitch'],iter_note['velocity'],
 				                          iter_note['part'],iter_note['fullNoteOctave'],
-				                          iter_note['name_note']]
+				                          iter_note['name_note'],iter_note['octave_name_note']]
 				                          ))
 
 		self.granular_music_df = (pd.DataFrame(granular_music_list,
 		                                  columns = ['start_ticks','pitch','velocity','part',
-		                                  'fullNoteOctave','name_note']))
-
-
+		                                  'fullNoteOctave','name_note','octave_name_note']))
 
 	def get_chord_from_tick(self):
 		# Given a sequence of notes such as:
@@ -292,7 +304,8 @@ class Read(Score):
 		changes_in_chords[0] = {}
 
 		# Store the final column into id_aggregation_criteria
-		chord_per_ticks['id_aggregation_criteria'] = np.cumsum([len(element)>0 for element in changes_in_chords])
+		chord_per_ticks['id_aggregation_criteria'] = np.cumsum([len(element)>0 
+		                                                       for element in changes_in_chords])
 
 
 
@@ -303,7 +316,6 @@ class Read(Score):
 		           }
 		           )
 		      .reset_index()
-		      #.sort_values('start_ticks',ascending=False)
 		      )
 
 		# Rename the columns
@@ -351,6 +363,18 @@ def _get_note_name_without_octave(fullNoteOctave):
 		# Names can be F3, A2, then return F and A
 		return notes_dict[fullNoteOctave[0]]
 
+def _get_note_name_with_octave(fullNoteOctave):
+	# Function to get the name, regardless the octave
+
+	notes_dict = {'A':'La','B':'Si','C':'Do','D':'Re','E':'Mi','F':'Fa','G':'Sol'}
+
+	if len(fullNoteOctave) == 3:
+		# Names can be F3#, A2#, then return F# and A#
+		return notes_dict[fullNoteOctave[0]]+fullNoteOctave[2]+fullNoteOctave[1]
+	else:
+		# Names can be F3, A2, then return F and A
+		return notes_dict[fullNoteOctave[0]]+fullNoteOctave[1]
+
 def _convert_note_into_grade(chord_tuple):
 	# Function to convert a chord such as (F4#, C5#, F5, A4) into 
 	# grade functionalities (II,III,I,IV) for instance.
@@ -364,11 +388,11 @@ if __name__ == "__main__":
 	name_file_midi = '../../scores/Brahms_symphony_2_2.csv' # Si M
 	name_file_midi = '../../scores/Brahms_symphony_2_1.csv'
 	name_file_midi = '../../scores/Bach-Partita_No1_in_Bb_BWV825_7Gigue.csv'
-	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
 	name_file_midi = '../../scores/Albeniz_Asturias.csv'
 	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_5.csv'
 	name_file_midi = '../../scores/Schuber_Impromptu_D_899_No_3.csv'
 	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_1.csv'
+	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
 	#name_file_midi = '../../scores/Beethoven_Moonlight_Sonata_third_movement.csv'
 	#name_file_midi = '../../scores/Schubert_Piano_Trio_2nd_Movement.csv'
 	
@@ -376,6 +400,6 @@ if __name__ == "__main__":
 	# print(chopin.get_music_data().head())
 	#print(chopin.get_chord_from_tick().filter(['fullNoteOctave']))
 	print('La tonalidad es: '+chopin.get_tonality())
-	print(chopin.apply_tonality())
+	(chopin.apply_tonality())
 
 
