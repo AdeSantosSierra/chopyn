@@ -163,8 +163,7 @@ class Read(Score):
 		grades = ['I','II','III','IV','V','VI','VII']
 
 		# Return the aggregates of the chord and their sequence
-		agg_criteria = 'fullNoteOctave'
-		print(self.granular_music_df)
+		agg_criteria = 'octave_name_note'
 		chord_df = self.aggregate_chord_from_tick(aggregation_criteria = agg_criteria)
 		
 		all_notes = list(np.unique(list(itertools.chain(*chord_df[agg_criteria]))))
@@ -173,9 +172,15 @@ class Read(Score):
 
 		tonic = self.get_tonality()
 
+
+
 		# Find the intersection between notes in the scale and notes in the piece of music
 		tonic_scale_notes = map_tonic_with_scale[tonic]
-		common_notes = list(set(tonic_scale_notes) & set(all_notes))
+		if agg_criteria == 'octave_name_note':
+			common_notes = list(set(tonic_scale_notes) & set([iter_notas[:-1] for iter_notas in all_notes]))
+		else:
+			common_notes = list(set(tonic_scale_notes) & set(all_notes))
+
 		missing_notes_in_scale = list(set(tonic_scale_notes) - set(common_notes))
 		# print(common_notes)
 		# print(missing_notes_in_scale)
@@ -189,25 +194,46 @@ class Read(Score):
 
 
 		# Apply the mapping transformation to the remaining notes
-		chord_df['chord'] = \
-		(chord_df[agg_criteria]
-		 .apply(lambda tuple_x: 
-		        tuple([map_note_with_alias[renamed_notes] 
-		              if renamed_notes in renamed_missing_notes 
-		              else renamed_notes
-		              for renamed_notes in tuple_x
-		              ])))
+		if agg_criteria == 'octave_name_note':
+			chord_df['chord'] = \
+			(chord_df[agg_criteria]
+			 .apply(lambda tuple_x: 
+			        tuple([map_note_with_alias[renamed_notes[:-1]]+renamed_notes[-1]
+			              if renamed_notes[:-1] in renamed_missing_notes 
+			              else renamed_notes
+			              for renamed_notes in tuple_x
+			              ])))
+		else:
+			chord_df['chord'] = \
+			(chord_df[agg_criteria]
+			 .apply(lambda tuple_x: 
+			        tuple([map_note_with_alias[renamed_notes] 
+			              if renamed_notes in renamed_missing_notes 
+			              else renamed_notes
+			              for renamed_notes in tuple_x
+			              ])))
 
 		# Convert chord into grades
-		chord_df['grades'] = \
-		(chord_df['chord']
-		 .apply(lambda tuple_x:
-		        tuple([grades[map_tonic_with_scale[tonic]
-		              .index(chord_element)]
-		              if chord_element in tonic_scale_notes 
-		              else 'X'
-		              for chord_element in tuple_x
-		              ])))
+		if agg_criteria == 'octave_name_note':
+			chord_df['grades'] = \
+			(chord_df['chord']
+			 .apply(lambda tuple_x:
+			        tuple([grades[map_tonic_with_scale[tonic]
+			              .index(chord_element[:-1])]+chord_element[-1]
+			              if chord_element[:-1] in tonic_scale_notes 
+			              else 'X'
+			              for chord_element in tuple_x
+			              ])))
+		else:
+			chord_df['grades'] = \
+			(chord_df['chord']
+			 .apply(lambda tuple_x:
+			        tuple([grades[map_tonic_with_scale[tonic]
+			              .index(chord_element)]
+			              if chord_element in tonic_scale_notes 
+			              else 'X'
+			              for chord_element in tuple_x
+			              ])))
 
 		chord_df['dur'] = chord_df['max_tick']-chord_df['min_tick']+20
 
@@ -270,7 +296,9 @@ class Read(Score):
 		      .groupby('start_ticks')
 		      .agg({'fullNoteOctave':lambda x: Counter(x),
 		           # 'name_note':lambda x: tuple(dict(Counter(x)).keys())}
-		           'name_note':lambda x: Counter(x)}
+		           'name_note':lambda x: Counter(x),
+		           'octave_name_note':lambda x: Counter(x),
+		           }
 		           )
 		      .reset_index()
 		      )
@@ -364,7 +392,7 @@ def _get_note_name_without_octave(fullNoteOctave):
 		return notes_dict[fullNoteOctave[0]]
 
 def _get_note_name_with_octave(fullNoteOctave):
-	# Function to get the name, regardless the octave
+	# Function to get the name INCLUDING the octave
 
 	notes_dict = {'A':'La','B':'Si','C':'Do','D':'Re','E':'Mi','F':'Fa','G':'Sol'}
 
@@ -391,8 +419,8 @@ if __name__ == "__main__":
 	name_file_midi = '../../scores/Albeniz_Asturias.csv'
 	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_5.csv'
 	name_file_midi = '../../scores/Schuber_Impromptu_D_899_No_3.csv'
-	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_1.csv'
 	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
+	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_1.csv'
 	#name_file_midi = '../../scores/Beethoven_Moonlight_Sonata_third_movement.csv'
 	#name_file_midi = '../../scores/Schubert_Piano_Trio_2nd_Movement.csv'
 	
@@ -400,6 +428,6 @@ if __name__ == "__main__":
 	# print(chopin.get_music_data().head())
 	#print(chopin.get_chord_from_tick().filter(['fullNoteOctave']))
 	print('La tonalidad es: '+chopin.get_tonality())
-	(chopin.apply_tonality())
+	print(chopin.apply_tonality())
 
 
