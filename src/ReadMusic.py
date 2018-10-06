@@ -11,6 +11,14 @@ import pandas as pd
 
 from collections import Counter, OrderedDict
 
+import logging
+FORMAT = '%(asctime)-15s %(message)s'
+logging.basicConfig(format=FORMAT)
+logger = logging.getLogger(__name__)
+logger.setLevel('INFO')
+
+logger.warning('Protocol problem: %s', 'connection reset')
+
 
 class Score(object):
 
@@ -21,6 +29,7 @@ class Read(Score):
 
 	def __init__(self, name_file_midi):
 
+		logger.info('INFO: %s', 'Creating class '+self.__class__.__name__)
 		# Read midi file
 		self.music_df = pd.read_csv(name_file_midi)
 		# Calculate attribute name_note
