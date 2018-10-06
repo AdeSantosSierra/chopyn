@@ -128,17 +128,17 @@ class Read(Score):
 		map_tonic_with_scale = \
 					 ({'Do':['Do','Re','Mi','Fa','Sol','La','Si'],
 		               'Re':['Do#','Re','Mi','Fa#','Sol','La','Si'],
-		               'Reb':['Do','Reb','Mib','Fa','Solb','Lab','Sib'],
-		               'Mi':['Do#','Re#','Mi','Fa#','Sol#','La','Si'],
-		               'Mib':['Do','Re','Mib','Fa','Sol','Lab','Sib'],
-		               'Fa':['Do','Re','Mi','Fa','Sol','La','Sib'],
+		               'Reb':['Reb','Mib','Fa','Solb','Lab','Sib','Do'],
+		               'Mi':['Mi','Fa#','Sol#','La','Si','Do#','Re#'],
+		               'Mib':['Mib','Fa','Sol','Lab','Sib','Do','Re'],
+		               'Fa':['Fa','Sol','La','Sib','Do','Re','Mi'],
 		               # Fa# is the same as Solb
-		               'Sol':['Do','Re','Mi','Fa#','Sol','La','Si'],
-		               'Solb':['Dob','Reb','Mib','Fa','Solb','Lab','Sib'],
-		               'La':['Do#','Re','Mi','Fa#','Sol#','La','Si'],
-		               'Lab':['Do','Reb','Mib','Fa','Sol','Lab','Sib'],
-		               'Si':['Do#','Re#','Mi','Fa#','Sol#','La#','Si'],
-		               'Sib':['Do','Re','Mib','Fa','Sol','La','Sib'],
+		               'Sol':['Sol','La','Si','Do','Re','Mi','Fa#'],
+		               'Solb':['Solb','Lab','Sib','Dob','Reb','Mib','Fa'],
+		               'La':['La','Si','Do#','Re','Mi','Fa#','Sol#'],
+		               'Lab':['Lab','Sib','Do','Reb','Mib','Fa','Sol'],
+		               'Si':['Si','Do#','Re#','Mi','Fa#','Sol#','La#'],
+		               'Sib':['Sib','Do','Re','Mib','Fa','Sol','La'],
 		              })
 
 		map_note_with_alias = \
@@ -150,6 +150,8 @@ class Read(Score):
 						 'La#':'Sib',  'Sib':'La#',
 						 'Si#':'Do',  'Do':'Si#',
 						}
+
+		grades = ['I','II','III','IV','V','VI','VII']
 
 		# Return the aggregates of the chord and their sequence
 		agg_criteria = 'name_note'
@@ -174,7 +176,7 @@ class Read(Score):
 
 
 		# Apply the mapping transformation to the remaining notes
-		chord_df['renamed_note'] = \
+		chord_df['chord'] = \
 		(chord_df[agg_criteria]
 		 .apply(lambda tuple_x: 
 		        tuple([map_note_with_alias[renamed_notes] 
@@ -183,7 +185,20 @@ class Read(Score):
 		              for renamed_notes in tuple_x
 		              ])))
 
-		return chord_df
+		chord_df['grades'] = \
+		(chord_df['chord']
+		 .apply(lambda tuple_x:
+		        tuple([grades[map_tonic_with_scale[tonic]
+		              .index(chord_element)]
+		              if chord_element in tonic_scale_notes 
+		              else 'X'
+		              for chord_element in tuple_x
+		              ])))
+
+		chord_df['dur'] = chord_df['max_tick']-chord_df['min_tick']+20
+
+
+		return chord_df[['chord','grades','dur']]
 
 		
 
@@ -249,7 +264,7 @@ class Read(Score):
 		      )
 		# Do not forget the aggregated time pero granular chord.
 
-	def aggregate_chord_from_tick(self, aggregation_criteria = 'name_note'):
+	def aggregate_chord_from_tick(self, aggregation_criteria = 'name_note', dataframe = None):
 
 		# The other option for aggregation_criteria is:
 		# aggregation_criteria = 'fullNoteOctave'
@@ -345,23 +360,22 @@ def _convert_note_into_grade(chord_tuple):
 
 if __name__ == "__main__":
 
-	name_file_midi = '../../scores/Albeniz_Asturias.csv'
-	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_5.csv'
-	name_file_midi = '../../scores/Schuber_Impromptu_D_899_No_3.csv'
 	name_file_midi = '../../scores/Schubert_S560_Schwanengesang_no7.csv'
-	name_file_midi = '../../scores/Schubert_Piano_Trio_2nd_Movement.csv'
-	name_file_midi = '../../scores/Beethoven_Moonlight_Sonata_third_movement.csv'
+	#name_file_midi = '../../scores/Beethoven_Moonlight_Sonata_third_movement.csv'
 	name_file_midi = '../../scores/Brahms_symphony_2_2.csv' # Si M
 	name_file_midi = '../../scores/Brahms_symphony_2_1.csv'
 	name_file_midi = '../../scores/Bach-Partita_No1_in_Bb_BWV825_7Gigue.csv'
-	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_1.csv'
 	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
+	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_1.csv'
+	name_file_midi = '../../scores/Albeniz_Asturias.csv'
+	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_5.csv'
+	name_file_midi = '../../scores/Schuber_Impromptu_D_899_No_3.csv'
+	#name_file_midi = '../../scores/Schubert_Piano_Trio_2nd_Movement.csv'
 	
 	chopin = Read(name_file_midi)
 	# print(chopin.get_music_data().head())
 	#print(chopin.get_chord_from_tick().filter(['fullNoteOctave']))
 	print('La tonalidad es: '+chopin.get_tonality())
-	print(chopin.aggregate_chord_from_tick())
 	print(chopin.apply_tonality())
 
 
