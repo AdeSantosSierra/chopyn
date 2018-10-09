@@ -35,6 +35,8 @@ class MusicalNote(object):
 		# 	self.timbre = notes_props['timbre']
 
 		self.alteration = ''
+		# Why 4? Because 4 is the default octave
+		self.octave = 4
 
 		# As it is used by Melody class
 		self.notes_props = notes_props
@@ -57,11 +59,23 @@ class MusicalNote(object):
 			self.pitch = self.pitch + int(dic_alterations.keys()[dic_alterations.values().index(self.alteration)])	
 			self.notes_props['pitch'] = self.pitch
 
+		if 'octave' in notes_props:
+			
+			octave_increment = notes_props['octave']-self.octave
+			# Why 12? Because an octaves are separate 12 numbers
+			self.pitch = self.pitch+12*octave_increment
+			# Change octave in the end so that self.octave default is kept as 3
+			self.octave = notes_props['octave']
+
+
 	def get_pitch(self):
 		return self.pitch
 
 	def get_duration(self):
 		return self.duration
+
+	def get_octave(self):
+		return self.octave
 
 	def get_props(self):
 		return self.notes_props

@@ -68,6 +68,16 @@ class Read(Score):
 						 'Si#':'Do',  'Do':'Si#',
 						}
 
+		self.map_grades_with_scale_position = \
+						{'I':0,
+						 'II':1,
+						 'III':2,
+						 'IV':3,
+						 'V':4,
+						 'VI':5,
+						 'VII':6
+						}
+
 
 		# Read midi file
 		self.music_df = pd.read_csv(name_file_midi)
@@ -80,6 +90,9 @@ class Read(Score):
 
 	def get_map_note_with_alias(self):
 		return self.map_note_with_alias
+
+	def get_map_grades_with_scale_position(self):
+		return self.map_grades_with_scale_position
 
 	def get_music_data(self):
 		return self.music_df
@@ -388,8 +401,25 @@ class Read(Score):
 
 	def convert_grades_sequence_to_notes(self,grades_sequence, tonality):
 
+		tonality_scale = self.get_map_tonic_with_scale()[tonality]
+		grade_mapping = self.get_map_grades_with_scale_position()
+		print(tonality_scale)
+
 		for chord in grades_sequence:
-			pass
+			print(chord)
+			for note in chord:
+				
+
+				if note != 'X':
+					# Extract octave
+					octave = note[-1]
+					note_name = note[:-1]
+					converted_note = tonality_scale[grade_mapping[note_name]]+octave
+				else:
+					converted_note = tonality+str(3)
+				print('----- '+note_name+' '+octave+' -> '+converted_note)
+
+
 
 		
 def _get_note_name_without_octave(fullNoteOctave):
@@ -441,12 +471,12 @@ if __name__ == "__main__":
 	# print(chopin.get_music_data().head())
 	#print(chopin.get_chord_from_tick().filter(['fullNoteOctave']))
 	print('La tonalidad es: '+chopin.get_tonality())
-	grades_chords = chopin.apply_tonality()
+	# grades_chords = chopin.apply_tonality()
 	# grades_chords.to_csv('../tmp/'+name_file_midi[13:-4]+'_grades_chords.csv',
 	#                      header=True,
 	#                      index_label=None)
 
-	print(grades_chords)
+	# print(grades_chords)
 
 	grades_sequence = [('V4', 'III5', 'III4', 'I5'),
 ('IV2', 'I3', 'III5', 'I5'),
