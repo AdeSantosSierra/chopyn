@@ -3,6 +3,7 @@
 
 from MusicalNote import *
 from melody import *
+from Polyphony import *
 from Play import CSVtoMIDI
 from Tonality import *
 
@@ -399,25 +400,51 @@ class Read(Score):
 
 		return aggregated_chord_per_ticks
 
-	def convert_grades_sequence_to_notes(self,grades_sequence, tonality):
+	def convert_grades_sequence_to_notes(self,grades_sequence, tonic):
 
-		tonality_scale = self.get_map_tonic_with_scale()[tonality]
+		tonality_scale = self.get_map_tonic_with_scale()[tonic]
 		grade_mapping = self.get_map_grades_with_scale_position()
-		print(tonality_scale)
+
+		notes_sequence = list()
 
 		for chord in grades_sequence:
-			print(chord)
+			notes_chord = list()
 			for note in chord:
-				
-
 				if note != 'X':
 					# Extract octave
-					octave = note[-1]
+					octave = int(note[-1])
 					note_name = note[:-1]
-					converted_note = tonality_scale[grade_mapping[note_name]]+octave
+					converted_note = tonality_scale[grade_mapping[note_name]]
+					if converted_note[-1] == 'b' or converted_note[-1] == '#':
+						alteration = converted_note[-1]
+						name_note  = converted_note[:-1]
+					else:
+						alteration = ''
+						name_note  = converted_note
+
 				else:
-					converted_note = tonality+str(3)
-				print('----- '+note_name+' '+octave+' -> '+converted_note)
+					# In case of X, then use tonic
+					converted_note = tonic
+					octave = 4
+					if tonic[-1] == 'b' or tonic[-1] == '#':
+						alteration = tonic[-1]
+						name_note  = tonic[:-1]
+					else:
+						alteration = ''
+						name_note  = tonic
+
+				notes_props = {'duration':200, 'intensity':70, 'timbre':1,
+						   'alteration':alteration, 'octave':octave}		
+				notes_chord.append(globals()[name_note](**notes_props))
+
+			notes_sequence.append(notes_chord)
+
+			# notes_props = {'duration':200, 'intensity':70, 'timbre':1,
+			# 			   'alteration':alteration, 'octave':octave}
+
+			# notes_sequence.append(globals()[name_note](**notes_props))
+				
+		return notes_sequence
 
 
 
@@ -579,7 +606,114 @@ if __name__ == "__main__":
 ('X', 'IV4', 'X'),
 ('X', 'IV3', 'IV4')]
 
-	chopin.convert_grades_sequence_to_notes(grades_sequence, chopin.get_tonality())
+
+	grades_sequence_chopin = [('I2', 'I1', 'I4'),
+('I2', 'I1', 'V3'),
+('I2', 'I1', 'III4'),
+('I2', 'V4', 'I1'),
+('I2', 'I1', 'I5'),
+('I2', 'V4', 'I1'),
+('I2', 'I1', 'III5'),
+('I2', 'I1', 'V5'),
+('I2', 'I1', 'I6'),
+('I2', 'I1', 'V5'),
+('I2', 'I1', 'III6'),
+('I2', 'V6', 'I1'),
+('I2', 'I1', 'I7'),
+('I2', 'V4', 'I1'),
+('V2', 'X', 'V1'),
+('X', 'X', 'X'),
+('IV2', 'IV1', 'I5'),
+('IV2', 'IV1', 'III5'),
+('IV2', 'IV1', 'I4'),
+('IV2', 'IV1', 'III6'),
+('IV2', 'IV1', 'I6'),
+('X', 'X', 'X'),
+('IV2', 'IV1', 'I5'),
+('II3', 'V2', 'V1'),
+('III3', 'III2', 'VII4'),
+('X', 'X', 'VII4'),
+('V4', 'V2', 'V1'),
+('II3', 'V2', 'V1'),
+('III3', 'III2', 'VII4'),
+('I6', 'VI1', 'VI2'),
+('I2', 'I3'),
+('I2', 'I3'),
+('I2', 'I1', 'V3'),
+('I2', 'I1', 'I4'),
+('I2', 'I1', 'III5'),
+('I2', 'I1', 'VII4'),
+('I2', 'V4', 'I1'),
+('I2', 'I1', 'I4'),
+('I2', 'V4', 'I1'),
+('I2', 'I4'),
+('I2', 'I3', 'I6'),
+('I2', 'I3', 'I6'),
+('I2', 'I3', 'V5'),
+('I2', 'I3', 'X'),
+('I2', 'I3', 'III6'),
+('I2', 'I3', 'I4'),
+('I2', 'I3', 'V4'),
+('I2', 'I3', 'X'),
+('I2', 'I3', 'III6'),
+('I2', 'I3', 'I6'),
+('I2', 'I3', 'V5'),
+('I2', 'I3', 'X'),
+('I2', 'I3', 'III6'),
+('I2', 'I3', 'I6'),
+('I2', 'I3', 'V4'),
+('I2', 'I3', 'X'),
+('I2', 'I3', 'III6'),
+('I2', 'I3', 'I6'),
+('I2', 'I3', 'V4'),
+('I2', 'I3', 'X'),
+('I2', 'I3', 'III6'),
+('I2', 'I3', 'I6'),
+('I2', 'I3', 'V4'),
+('I2', 'I3', 'X'),
+('I2', 'I3', 'III6'),
+('I2', 'I3', 'I6'),
+('I2', 'I3', 'V4'),
+('I2', 'I3', 'X'),
+('I2', 'I3', 'III6'),
+('I2', 'I3', 'I6'),
+('I2', 'I3', 'V4'),
+('I2', 'I3', 'X'),
+('I2', 'I3', 'III6'),
+('I2', 'I3', 'I6'),
+('I2', 'I3', 'V4'),
+('I2', 'I3', 'X'),
+('I2', 'I3', 'III6'),
+('I2', 'I3', 'I6'),
+('I2', 'I3', 'V4'),
+('I2', 'I3', 'X'),
+('I2', 'I3', 'III6'),
+('I2', 'I3', 'I6'),
+('I2', 'I3', 'V4'),
+('I2', 'I3', 'X'),
+('I2', 'I3', 'III6'),
+('I2', 'I3', 'I6'),
+('I2', 'I3', 'V4'),
+('I2', 'I3', 'X'),
+('I2', 'I3', 'III6'),
+('I2', 'I3', 'I6'),
+('I2', 'I3', 'V4'),
+('I2', 'I3', 'X'),
+('I2', 'I3', 'III6'),
+('I2', 'I3', 'I6'),
+('I2', 'I3', 'V4'),
+('I2', 'I3', 'X'),
+('I2', 'I3', 'III6'),
+('I2', 'I3', 'I6'),
+('I2', 'I3', 'V4'),
+('I2', 'I3', 'X')]
+
+	chords_notes = chopin.convert_grades_sequence_to_notes(grades_sequence_chopin, chopin.get_tonality())
+
+	polyphony = SequenceChordPolyphony(chords_notes)
+	CSVtoMIDI(polyphony.convert_to_midi(),'my_first_polyphony')
+
+
 
 
 
