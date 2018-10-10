@@ -30,6 +30,24 @@ def test_update_pitch_re():
 	re = Re(**notes_props)
 	assert re.get_pitch() == 62
 
+def test_standard_octave():
+	assert Do().get_octave() == 4
+
+def test_update_octave():
+	octave = 6
+	notes_props = {'duration':100, 'intensity': 200, 'timbre': 1, 'alteration':'b', 'octave':octave}
+	assert Fa(**notes_props).get_octave() == octave
+
+def test_higher_octave():
+	notes_props = {'duration':100, 'intensity': 200, 'timbre': 1, 'alteration':'b', 'octave':6}
+	re = Re(**notes_props)
+	assert re.get_pitch() == 85
+
+def test_lower_octave():
+	notes_props = {'duration':100, 'intensity': 200, 'timbre': 1, 'alteration':'b', 'octave':2}
+	re = Re(**notes_props)
+	assert re.get_pitch() == 37
+
 ########################################
 #
 # Test get_note_from_interval_do
