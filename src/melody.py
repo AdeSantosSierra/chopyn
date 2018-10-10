@@ -61,6 +61,8 @@ class SequenceMelody(Melody):
 		self.sequence_of_notes = sequence_of_notes
 
 
+
+
 if __name__ == '__main__':
 	melody = RandomMelody()
 	CSVtoMIDI(melody.convert_to_midi())

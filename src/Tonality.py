@@ -3,6 +3,7 @@
 
 from MusicalNote import *
 from melody import *
+from Polyphony import *
 from Play import CSVtoMIDI
 
 import numpy as np
