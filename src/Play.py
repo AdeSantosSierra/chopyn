@@ -7,11 +7,11 @@ class CSVtoMIDI:
 	# Add DOC later
     
 
-	def __init__(self,dataframe):
+	def __init__(self,dataframe, name_file_midi = 'my_first_midi_file'):
 		
 		
 		# Create the names for the csv and midi files
-		name_file_midi = 'my_first_midi_file'
+		# name_file_midi = 'my_first_midi_file'
 		csv_file = '../../output/CSV/'+name_file_midi+'.csv'
 		midi_file = '../../output/MIDI/'+name_file_midi+'.midi'
 
