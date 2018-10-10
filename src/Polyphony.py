@@ -15,28 +15,37 @@ class Polyphony (object):
 
 	def convert_to_midi(self):
 
-		start_ms_array = \
-		(np.cumsum([0]+[note_from_melody.get_duration() 
-			for note_from_melody in self.sequence_of_notes]))
+		individual_notes = list()
+		chord_id = list()
+
+		duration_length = 250
+		factor_duration = 2
+
+		for id_iter_chord, iter_chord in enumerate(self.sequenceChord):
+			for part_note_in_chord, iter_note_in_chord in enumerate(iter_chord):
+				iter_note_in_chord.update_props({'timbre':part_note_in_chord+1})
+				individual_notes.append(iter_note_in_chord)
+				# Store the id of the chord to know which notes are together
+				chord_id.append((id_iter_chord+1)*factor_duration*duration_length)
+
 
 		# Create dataframe with musical properties from sequence/melody
 		# print([note_from_melody.get_play_props() for note_from_melody in self.sequence_of_notes])
 		# print('pppppppp')
-		melody_dataframe = pd.DataFrame.from_records([note_from_melody.get_play_props() 
-			for note_from_melody in self.sequence_of_notes])
+		music_dataframe = pd.DataFrame.from_records([note_from_melody.get_play_props() 
+			for note_from_melody in individual_notes])
 
-		# print(melody_dataframe)
-
-		# Add the time sequence
-		melody_dataframe['start_ms'] = start_ms_array[:-1]
+		music_dataframe['start_ms'] = chord_id
+		music_dataframe['duration'] = duration_length*factor_duration
 
 		# Rename columns as the MIDI has already specific names for the columns
-		# print(melody_dataframe.columns)
-		melody_dataframe.columns = ['dur_ms','velocity','pitch','part','start_ms']
+		music_dataframe.columns = ['dur_ms','velocity','pitch','part','start_ms']
 
-		return melody_dataframe	
+		return music_dataframe	
 
 
 
 class SequenceChordPolyphony (Polyphony):
-	pass
+
+	def __init__(self, sequenceChord):
+		self.sequenceChord = sequenceChord
