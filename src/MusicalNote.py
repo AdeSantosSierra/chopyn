@@ -33,7 +33,6 @@ class MusicalNote(object):
 		# 	self.pitch = notes_props['pitch']
 		# 	self.intensity = notes_props['intensity']
 		# 	self.timbre = notes_props['timbre']
-		print('self.pitch')
 		
 		self.alteration = ''
 		# Why 4? Because 4 is the default octave
@@ -44,8 +43,6 @@ class MusicalNote(object):
 		
 		if 'pitch' in notes_props:
 			self.pitch = notes_props['pitch']
-
-		print(self.pitch)
 
 		if 'duration' in notes_props:
 			self.duration = notes_props['duration']
@@ -72,9 +69,6 @@ class MusicalNote(object):
 			self.notes_props['pitch'] = self.pitch
 			self.notes_props['octave'] = self.octave
 
-		print(self.pitch)
-
-
 	def get_pitch(self):
 		return self.pitch
 
@@ -91,7 +85,6 @@ class MusicalNote(object):
 		# Only those props useful to play music	
 		#print(self.notes_props['duration'])	
 		# print(dict((k, self.notes_props[k]) for k in ('pitch','duration','intensity','timbre') if k in self.notes_props))
-		print(dict((k, self.notes_props[k]) for k in ('pitch','duration','intensity','timbre') if k in self.notes_props))
 		return dict((k, self.notes_props[k]) for k in ('pitch','duration','intensity','timbre') if k in self.notes_props)
 
 	def update_props(self,new_notes_props):

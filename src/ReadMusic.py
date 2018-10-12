@@ -19,9 +19,6 @@ logging.basicConfig(format=FORMAT)
 logger = logging.getLogger(__name__)
 logger.setLevel('INFO')
 
-logger.warning('Protocol problem: %s', 'connection reset')
-
-
 import sys
 # import folders with the code
 # At the moment, there is not other way of importing 
