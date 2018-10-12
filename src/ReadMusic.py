@@ -446,8 +446,6 @@ class Read(Score):
 				
 		return notes_sequence
 
-
-
 		
 def _get_note_name_without_octave(fullNoteOctave):
 	# Function to get the name, regardless the octave
@@ -708,7 +706,7 @@ if __name__ == "__main__":
 ('I2', 'I3', 'V4'),
 ('I2', 'I3', 'X')]
 
-	chords_notes = chopin.convert_grades_sequence_to_notes(grades_sequence_chopin, chopin.get_tonality())
+	chords_notes = chopin.convert_grades_sequence_to_notes(grades_sequence, chopin.get_tonality())
 
 	polyphony = SequenceChordPolyphony(chords_notes)
 	CSVtoMIDI(polyphony.convert_to_midi(),'my_first_polyphony')
