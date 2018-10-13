@@ -69,6 +69,7 @@ class MusicalNote(object):
 			self.notes_props['pitch'] = self.pitch
 			self.notes_props['octave'] = self.octave
 
+
 	def get_pitch(self):
 		return self.pitch
 
@@ -84,6 +85,7 @@ class MusicalNote(object):
 	def get_play_props(self):
 		# Only those props useful to play music	
 		#print(self.notes_props['duration'])	
+		# print(dict((k, self.notes_props[k]) for k in ('pitch','duration','intensity','timbre') if k in self.notes_props))
 		# print(dict((k, self.notes_props[k]) for k in ('pitch','duration','intensity','timbre') if k in self.notes_props))
 		return dict((k, self.notes_props[k]) for k in ('pitch','duration','intensity','timbre') if k in self.notes_props)
 
