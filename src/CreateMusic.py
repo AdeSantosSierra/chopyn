@@ -213,7 +213,6 @@ if __name__ == '__main__':
 	name_file_midi = '../../scores/Brahms_symphony_2_2.csv' # Si M
 	name_file_midi = '../../scores/Brahms_symphony_2_1.csv'
 	name_file_midi = '../../scores/Bach-Partita_No1_in_Bb_BWV825_7Gigue.csv'
-	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_5.csv'
 	name_file_midi = '../../scores/Schuber_Impromptu_D_899_No_3.csv'
 	name_file_midi = '../../scores/Mozart_Sonata_16.csv'
 	name_file_midi = '../../scores/Mozart_Rondo.csv'
@@ -221,17 +220,17 @@ if __name__ == '__main__':
 	name_file_midi = '../../scores/Albeniz_Asturias.csv' # Doesn't detect properly 
 	name_file_midi = '../../scores/Bach_Cello_Suite_No_1.csv'
 	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
+	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_5.csv'
 	#name_file_midi = '../../scores/Beethoven_Moonlight_Sonata_third_movement.csv'
 	#name_file_midi = '../../scores/Schubert_Piano_Trio_2nd_Movement.csv'
 	
 	musical_piece = Read(name_file_midi)
+	sequence_depth = 10
+	training_iters = 80000
 
 	print('La tonalidad es: '+musical_piece.get_tonality())
 
-	# TODO: avoid 20000.meta
-
 	logger.info('Calculate the tonality and apply it to the whole music piece')
-	#name_grades_chords = '../tmp/'+name_file_midi[13:-4]+'_grades_chords.csv'
 	grades_chords = musical_piece.apply_tonality()
 
 	logger.info('Extract the sequence of chords')
@@ -239,8 +238,8 @@ if __name__ == '__main__':
 
 	logger.info('Create the Deep Learning object')
 	music_creator = CreateMusicFromChords(grades_chords,
-	                                      training_iters = 2000,
-	                                      n_input = 20
+	                                      training_iters = training_iters,
+	                                      n_input = sequence_depth
 	                                      )	
 
 	logger.info('Config LSTM')
@@ -262,9 +261,9 @@ if __name__ == '__main__':
 
 	logger.info('Create Music!!')
 	music_creation = \
-	music_creator.load_and_predict(name_model+'-2000.meta',
+	music_creator.load_and_predict(name_model+'-'+str(training_iters)+'.meta',
 	                               initial_sequence_chords,
-	                               sequence_length = 20
+	                               sequence_length = sequence_depth
 	                               )
 
 	logger.info('Convert it to MIDI')
