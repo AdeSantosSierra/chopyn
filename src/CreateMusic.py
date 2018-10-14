@@ -144,11 +144,84 @@ class CreateMusicFromChords(object):
 		        step += 1
 		        offset += (self.n_input+1)
 
+	def train_and_predict(self, optimizer, accuracy, cost, pred, name_model, sequence_length, starting_sequence):
+
+		# Launch the graph
+		with tf.Session() as session:
+		    session.run(self.init)
+		    self.saver.save(session, name_model)
+		    step = 0
+		    offset = random.randint(0,self.n_input+1)
+		    end_offset = self.n_input + 1
+		    acc_total = 0
+		    loss_total = 0
+
+		    vocab_size = len(self.dictionary)
+
+		    reverse_dictionary = dict(zip(self.dictionary.values(),
+		                                  self.dictionary.keys()))
+
+		    self.writer.add_graph(session.graph)
+
+		    while step < self.training_iters:
+		        # Generate a minibatch. Add some randomness on selection process.
+		        if offset > (len(self.training_data)-end_offset):
+		            offset = random.randint(0, self.n_input+1)
+
+		        symbols_in_keys = ([[self.dictionary[self.training_data[i]]] 
+		                           for i in range(offset, offset+self.n_input) ])
+		        symbols_in_keys = np.reshape(np.array(symbols_in_keys), [-1, self.n_input, 1])
+
+		        symbols_out_onehot = np.zeros([vocab_size], dtype=float)
+		        symbols_out_onehot[self.dictionary[self.training_data[offset+self.n_input]]] = 1.0
+		        symbols_out_onehot = np.reshape(symbols_out_onehot,[1,-1])
+
+		        _, acc, loss, onehot_pred = session.run([optimizer, accuracy, cost, pred], \
+		                                                feed_dict={self.x: symbols_in_keys, self.y: symbols_out_onehot})
+
+		        #print('pred')
+		        #print(pred)
+		        loss_total += loss
+		        acc_total += acc
+		        if (step+1) % self.display_step == 0:
+		            print("Iter= " + str(step+1) + ", Average Loss= " + \
+		                  "{:.6f}".format(loss_total/self.display_step) + ", Average Accuracy= " + \
+		                  "{:.2f}%".format(100*acc_total/self.display_step))
+		            acc_total = 0
+		            loss_total = 0
+		            symbols_in = [self.training_data[i] for i in range(offset, offset + self.n_input)]
+		            symbols_out = self.training_data[offset + self.n_input]
+		            symbols_out_pred = reverse_dictionary[int(tf.argmax(onehot_pred, 1).eval())]
+		            print("%s - [%s] vs [%s]" % (symbols_in,symbols_out,symbols_out_pred))
+		            self.saver.save(session, name_model, global_step=step+1)
+		        step += 1
+		        offset += (self.n_input+1)
+
+			symbols_in_keys = [self.dictionary[(iter_sequence)] for iter_sequence in starting_sequence]
+		    output_sequence = list()
+
+		    for i in range(sequence_length):
+				keys = np.reshape(symbols_in_keys, [-1, self.n_input, 1])
+				onehot_pred = session.run(pred, feed_dict={self.x: keys})
+				onehot_pred_index = int(tf.argmax(onehot_pred, 1).eval())
+				print('symbols_out')
+				print(onehot_pred_index)
+				output_sequence.append(reverse_dictionary[onehot_pred_index])
+				symbols_in_keys = symbols_in_keys[1:]
+				symbols_in_keys.append(onehot_pred_index)
+				print('symbols_in_keys')
+				print(symbols_in_keys)
+
+		return output_sequence
+
 	def load_and_predict (self, model_metadata, starting_sequence, sequence_length):
 
 		output_sequence = list()
 
 		with tf.Session() as session:
+
+			# Other attempts
+			# tf.saved_model.loader.load(session,[name_model], '/tmp')
 
 			#First let's load meta graph and restore weights
 			saver = tf.train.import_meta_graph(model_metadata)
@@ -157,8 +230,11 @@ class CreateMusicFromChords(object):
 			
 			saver.restore(session,tf.train.latest_checkpoint('../models/'))
 			graph = tf.get_default_graph()
-			pred = graph.get_tensor_by_name("add:0")
-			x = graph.get_tensor_by_name("x:0")
+			pred  = graph.get_tensor_by_name("add:0")
+			x     = graph.get_tensor_by_name("x:0")
+
+
+
 
 			reverse_dictionary = dict(zip(self.dictionary.values(),
 			                                  self.dictionary.keys()))
@@ -167,9 +243,11 @@ class CreateMusicFromChords(object):
 			
 
 			for i in range(sequence_length):
-				keys = np.reshape(symbols_in_keys, [-1, self.n_input, 1])
-				onehot_pred = session.run(pred, feed_dict={x: keys})
+				keys              = np.reshape(np.array(symbols_in_keys), [-1, self.n_input, 1])
+				onehot_pred       = session.run(pred, feed_dict={x: keys})
 				onehot_pred_index = int(tf.argmax(onehot_pred, 1).eval())
+				print('symbols_out')
+				print(onehot_pred_index)
 				output_sequence.append(reverse_dictionary[onehot_pred_index])
 				symbols_in_keys = symbols_in_keys[1:]
 				symbols_in_keys.append(onehot_pred_index)
@@ -214,19 +292,20 @@ if __name__ == '__main__':
 	name_file_midi = '../../scores/Brahms_symphony_2_1.csv'
 	name_file_midi = '../../scores/Bach-Partita_No1_in_Bb_BWV825_7Gigue.csv'
 	name_file_midi = '../../scores/Schuber_Impromptu_D_899_No_3.csv'
-	name_file_midi = '../../scores/Mozart_Sonata_16.csv'
 	name_file_midi = '../../scores/Mozart_Rondo.csv'
 	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_1.csv'
 	name_file_midi = '../../scores/Albeniz_Asturias.csv' # Doesn't detect properly 
-	name_file_midi = '../../scores/Bach_Cello_Suite_No_1.csv'
 	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
+	name_file_midi = '../../scores/Bach_Cello_Suite_No_1.csv'
 	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_5.csv'
+	name_file_midi = '../../scores/Mozart_Sonata_16.csv'
 	#name_file_midi = '../../scores/Beethoven_Moonlight_Sonata_third_movement.csv'
 	#name_file_midi = '../../scores/Schubert_Piano_Trio_2nd_Movement.csv'
 	
 	musical_piece = Read(name_file_midi)
-	sequence_depth = 10
-	training_iters = 80000
+	n_input = 5
+	training_iters = 100000
+	sequence_length = 100
 
 	print('La tonalidad es: '+musical_piece.get_tonality())
 
@@ -239,32 +318,34 @@ if __name__ == '__main__':
 	logger.info('Create the Deep Learning object')
 	music_creator = CreateMusicFromChords(grades_chords,
 	                                      training_iters = training_iters,
-	                                      n_input = sequence_depth
+	                                      n_input = n_input
 	                                      )	
 
 	logger.info('Config LSTM')
 	optimizer, accuracy, cost, pred = music_creator.config_LSTM()
 
-	logger.info('Train and save LSTM')
-	music_creator.train(optimizer, accuracy, cost, pred, name_model)
 
-	# Estimate an initial sequence for the LSTM to work
-	# That sequence must have a specific length (according to trained TF model)
 	logger.info('Estimate initial sequence to predict based on LSTM')
 	grades_chords_values = grades_chords['grades']
-	initial_point = random.randint(0,len(grades_chords_values)-music_creator.n_input-1)
+	initial_point = random.randint(0,len(grades_chords_values)-n_input-1)
 	initial_sequence_chords = list(grades_chords_values
-	                               [initial_point:(initial_point+
-	                                               music_creator.n_input)
+	                               [initial_point:(initial_point+n_input)
 	                               ]
 	                               )
 
-	logger.info('Create Music!!')
+	logger.info('Train and save LSTM')
 	music_creation = \
-	music_creator.load_and_predict(name_model+'-'+str(training_iters)+'.meta',
-	                               initial_sequence_chords,
-	                               sequence_length = sequence_depth
-	                               )
+	music_creator.train_and_predict(optimizer, accuracy, cost, pred, name_model,
+	                                sequence_length = sequence_length,
+	                                starting_sequence = initial_sequence_chords
+	                                )
+
+	# logger.info('Create Music!!')
+	# music_creation = \
+	# music_creator.load_and_predict(name_model+'-'+str(training_iters)+'.meta',
+	#                                initial_sequence_chords,
+	#                                sequence_length = sequence_length
+	#                                )
 
 	logger.info('Convert it to MIDI')
 	chords_notes = (musical_piece
