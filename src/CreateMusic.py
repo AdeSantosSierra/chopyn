@@ -28,6 +28,7 @@ import tensorflow as tf
 from tensorflow.contrib import rnn
 import random
 import time
+import os
 
 class CreateMusicFromChords(object):
 
@@ -58,7 +59,7 @@ class CreateMusicFromChords(object):
 		learning_rate = 0.001
 
 		# number of units in RNN cell
-		n_hidden = 512
+		n_hidden = 1024
 		vocab_size = len(self.dictionary)
 
 		# tf Graph input
@@ -74,8 +75,6 @@ class CreateMusicFromChords(object):
 		    'out': tf.Variable(tf.random_normal([vocab_size]))
 		}
 
-		self.saver = tf.train.Saver()
-
 		pred = self.RNN(self.x, weights, biases, n_hidden)
 
 		# Loss and optimizer
@@ -88,6 +87,7 @@ class CreateMusicFromChords(object):
 
 		# Initializing the variables
 		self.init = tf.global_variables_initializer()
+		self.saver = tf.train.Saver()
 
 		return optimizer, accuracy, cost, pred
 
@@ -214,7 +214,7 @@ class CreateMusicFromChords(object):
 
 		return output_sequence
 
-	def load_and_predict (self, model_metadata, starting_sequence, sequence_length):
+	def load_and_predict (self, dir_name_model, model_metadata, starting_sequence, sequence_length):
 
 		output_sequence = list()
 
@@ -225,12 +225,13 @@ class CreateMusicFromChords(object):
 
 			#First let's load meta graph and restore weights
 			saver = tf.train.import_meta_graph(model_metadata)
+
 			# Initialize variables
 			session.run(tf.global_variables_initializer())
+			saver.restore(session,tf.train.latest_checkpoint(dir_name_model))
 			
-			saver.restore(session,tf.train.latest_checkpoint('../models/'))
 			graph = tf.get_default_graph()
-			pred  = graph.get_tensor_by_name("add:0")
+			pred  = graph.get_tensor_by_name("pred:0")
 			x     = graph.get_tensor_by_name("x:0")
 
 
@@ -246,13 +247,13 @@ class CreateMusicFromChords(object):
 				keys              = np.reshape(np.array(symbols_in_keys), [-1, self.n_input, 1])
 				onehot_pred       = session.run(pred, feed_dict={x: keys})
 				onehot_pred_index = int(tf.argmax(onehot_pred, 1).eval())
-				print('symbols_out')
-				print(onehot_pred_index)
+				# print('symbols_out')
+				# print(onehot_pred_index)
 				output_sequence.append(reverse_dictionary[onehot_pred_index])
 				symbols_in_keys = symbols_in_keys[1:]
 				symbols_in_keys.append(onehot_pred_index)
-				print('symbols_in_keys')
-				print(symbols_in_keys)
+				# print('symbols_in_keys')
+				# print(symbols_in_keys)
 
 		return output_sequence
 
@@ -269,7 +270,9 @@ class CreateMusicFromChords(object):
 
 	    # 2-layer LSTM, each layer has n_hidden units.
 	    # Average Accuracy= 95.20% at 50k iter
-	    rnn_cell = rnn.MultiRNNCell([rnn.BasicLSTMCell(n_hidden),rnn.BasicLSTMCell(n_hidden)])
+	    rnn_cell = rnn.MultiRNNCell([rnn.BasicLSTMCell(n_hidden),
+	                                rnn.BasicLSTMCell(n_hidden),
+	                                rnn.BasicLSTMCell(n_hidden)])
 	    
 	    # 1-layer LSTM with n_hidden units but with lower accuracy.
 	    # Average Accuracy= 90.60% 50k iter
@@ -281,7 +284,9 @@ class CreateMusicFromChords(object):
 
 	    # there are n_input outputs but
 	    # we only want the last output
-	    return tf.matmul(outputs[-1], weights['out']) + biases['out']
+	    pred = tf.matmul(outputs[-1], weights['out']) + biases['out']
+	    tf.identity(pred, 'pred')
+	    return pred
 
 
 if __name__ == '__main__':
@@ -289,23 +294,24 @@ if __name__ == '__main__':
 
 	name_file_midi = '../../scores/Schubert_S560_Schwanengesang_no7.csv'
 	name_file_midi = '../../scores/Brahms_symphony_2_2.csv' # Si M
-	name_file_midi = '../../scores/Brahms_symphony_2_1.csv'
 	name_file_midi = '../../scores/Bach-Partita_No1_in_Bb_BWV825_7Gigue.csv'
-	name_file_midi = '../../scores/Schuber_Impromptu_D_899_No_3.csv'
-	name_file_midi = '../../scores/Mozart_Rondo.csv'
-	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_1.csv'
 	name_file_midi = '../../scores/Albeniz_Asturias.csv' # Doesn't detect properly 
-	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
 	name_file_midi = '../../scores/Bach_Cello_Suite_No_1.csv'
 	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_5.csv'
+	name_file_midi = '../../scores/Schuber_Impromptu_D_899_No_3.csv'
+	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
+	name_file_midi = '../../scores/Mozart_Rondo.csv'
+	name_file_midi = '../../scores/Brahms_symphony_2_1.csv'
+	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_1.csv'
 	name_file_midi = '../../scores/Mozart_Sonata_16.csv'
 	#name_file_midi = '../../scores/Beethoven_Moonlight_Sonata_third_movement.csv'
 	#name_file_midi = '../../scores/Schubert_Piano_Trio_2nd_Movement.csv'
 	
 	musical_piece = Read(name_file_midi)
-	n_input = 5
+	n_input = 20
 	training_iters = 100000
 	sequence_length = 100
+	bool_train = False
 
 	print('La tonalidad es: '+musical_piece.get_tonality())
 
@@ -313,7 +319,14 @@ if __name__ == '__main__':
 	grades_chords = musical_piece.apply_tonality()
 
 	logger.info('Extract the sequence of chords')
-	name_model = '../models/'+name_file_midi[13:-4]
+
+
+	name_model = 'n_input_'+str(n_input)+'_iters_'+str(training_iters)+'_'+name_file_midi[13:-4]
+	dir_name_model = '../models/'+name_model
+
+	if not os.path.exists(dir_name_model):
+	    os.makedirs(dir_name_model)
+
 
 	logger.info('Create the Deep Learning object')
 	music_creator = CreateMusicFromChords(grades_chords,
@@ -321,8 +334,10 @@ if __name__ == '__main__':
 	                                      n_input = n_input
 	                                      )	
 
-	logger.info('Config LSTM')
-	optimizer, accuracy, cost, pred = music_creator.config_LSTM()
+	
+	if bool_train:
+		logger.info('Config LSTM')
+		optimizer, accuracy, cost, pred = music_creator.config_LSTM()
 
 
 	logger.info('Estimate initial sequence to predict based on LSTM')
@@ -333,19 +348,22 @@ if __name__ == '__main__':
 	                               ]
 	                               )
 
-	logger.info('Train and save LSTM')
-	music_creation = \
-	music_creator.train_and_predict(optimizer, accuracy, cost, pred, name_model,
-	                                sequence_length = sequence_length,
-	                                starting_sequence = initial_sequence_chords
-	                                )
+	if bool_train:
+		logger.info('Train and save LSTM')
+		music_creation = \
+		music_creator.train(optimizer, accuracy, cost, pred, dir_name_model+'/'+name_model,
+		                                #sequence_length = sequence_length,
+		                                #starting_sequence = initial_sequence_chords
+		                                )
 
-	# logger.info('Create Music!!')
-	# music_creation = \
-	# music_creator.load_and_predict(name_model+'-'+str(training_iters)+'.meta',
-	#                                initial_sequence_chords,
-	#                                sequence_length = sequence_length
-	#                                )
+	logger.info('Create Music!!')
+	print(dir_name_model+'/'+name_model+'-'+str(training_iters)+'.meta')
+	music_creation = \
+	music_creator.load_and_predict(dir_name_model,
+	                               dir_name_model+'/'+name_model+'-'+str(35000)+'.meta',
+	                               initial_sequence_chords,
+	                               sequence_length = sequence_length
+	                               )
 
 	logger.info('Convert it to MIDI')
 	chords_notes = (musical_piece
