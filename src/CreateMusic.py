@@ -310,7 +310,7 @@ if __name__ == '__main__':
 	musical_piece = Read(name_file_midi)
 	n_input = 20
 	training_iters = 100000
-	sequence_length = 100
+	sequence_length = 300
 	bool_train = False
 
 	print('La tonalidad es: '+musical_piece.get_tonality())
@@ -360,12 +360,12 @@ if __name__ == '__main__':
 	print(dir_name_model+'/'+name_model+'-'+str(training_iters)+'.meta')
 	music_creation = \
 	music_creator.load_and_predict(dir_name_model,
-	                               dir_name_model+'/'+name_model+'-'+str(35000)+'.meta',
+	                               dir_name_model+'/'+name_model+'-'+str(41000)+'.meta',
 	                               initial_sequence_chords,
 	                               sequence_length = sequence_length
 	                               )
 
-	logger.info('Convert it to MIDI')
+	logger.info('Convert grades to sequences')
 	chords_notes = (musical_piece
 	                .convert_grades_sequence_to_notes(music_creation,
 	                                                  musical_piece.get_tonality()
@@ -373,6 +373,7 @@ if __name__ == '__main__':
 	                )
 
 
+	logger.info('Convert it to MIDI')
 	polyphony = SequenceChordPolyphony(chords_notes)
 	CSVtoMIDI(polyphony
 	          .convert_to_midi(),
