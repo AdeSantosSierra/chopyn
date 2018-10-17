@@ -18,7 +18,7 @@ class Polyphony (object):
 		individual_notes = list()
 		chord_id = list()
 
-		duration_length = 250
+		duration_length = 125
 		factor_duration = 2
 
 		for id_iter_chord, iter_chord in enumerate(self.sequenceChord):
@@ -43,6 +43,8 @@ class Polyphony (object):
 
 		# Merge together those repeated notes
 		extended_music_dataframe_list = []
+
+		print('-------Fallan aqui los .loc')
 		for a, df_gb in music_dataframe.groupby(['velocity','pitch','part']):
 			df_gb.loc[:,'next_start_ms'] = ((df_gb['start_ms']+df_gb['dur_ms'])
 			                          .shift(1)
@@ -59,6 +61,7 @@ class Polyphony (object):
 			 [['dur_ms','velocity','pitch','part','start_ms']]
 			 )
 
+		print('-------Fallan aqui los .loc --- 2')
 		#print(pd.concat(extended_music_dataframe_list).sort_values(['part','start_ms']))
 
 		return pd.concat(extended_music_dataframe_list).sort_values(['part','start_ms'])
