@@ -7,4 +7,6 @@ style and who knows what else...
 
 Chopyn will be an open-source project, combining RNN, Deep Learning and the most cutting-edge AI technologies.
 
+You may find some cherry-picking samples here: http://soundcloud.com/alberto-de-santos-sierra
+
 Copyright 2018 - This is an original project proposed and created by Alberto de Santos Sierra.
