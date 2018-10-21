@@ -129,9 +129,9 @@ class MusicalNote(object):
 		sum_interval = np.sum(dic_interval_definition[interval])
 
 		# Rotate distance_major_scale accordingly
-		rotated_distances = distance_major_scale[position_base_note:] + distance_major_scale[:position_base_note]
+		rotated_distances      = distance_major_scale[position_base_note:] + distance_major_scale[:position_base_note]
 		rotated_diatonic_scale = diatonic_scale[(position_base_note+length_interval) % number_notes:] + diatonic_scale[:(position_base_note+length_interval) % number_notes]
-		sum_tones_interval = np.cumsum(rotated_distances)[length_interval % number_notes -1]
+		sum_tones_interval     = np.cumsum(rotated_distances)[length_interval % number_notes -1]
 
 		# Step 1: Obtain distance between base_note and the chord_note
 		chord_note = rotated_diatonic_scale[0]
