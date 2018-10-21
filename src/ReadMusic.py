@@ -42,7 +42,7 @@ class Read(Score):
 
 		self.map_tonic_with_scale = \
 					 ({'Do':['Do','Re','Mi','Fa','Sol','La','Si'],
-		               'Re':['Do#','Re','Mi','Fa#','Sol','La','Si'],
+		               'Re':['Re','Mi','Fa#','Sol','La','Si','Do#'],
 		               'Reb':['Reb','Mib','Fa','Solb','Lab','Sib','Do'],
 		               'Mi':['Mi','Fa#','Sol#','La','Si','Do#','Re#'],
 		               'Mib':['Mib','Fa','Sol','Lab','Sib','Do','Re'],
@@ -75,6 +75,8 @@ class Read(Score):
 						 'VI':5,
 						 'VII':6
 						}
+
+		self.grades = ['I','II','III','IV','V','VI','VII']
 
 
 		# Read midi file
@@ -180,10 +182,10 @@ class Read(Score):
 	def apply_tonality(self):
 
 		map_tonic_with_scale = self.get_map_tonic_with_scale()
+		
+		map_note_with_alias  = self.get_map_note_with_alias()
 
-		map_note_with_alias = self.get_map_note_with_alias()
-
-		grades = ['I','II','III','IV','V','VI','VII']
+		
 
 		# Return the aggregates of the chord and their sequence
 		agg_criteria = 'octave_name_note'
@@ -205,8 +207,11 @@ class Read(Score):
 			common_notes = list(set(tonic_scale_notes) & set(all_notes))
 
 		missing_notes_in_scale = list(set(tonic_scale_notes) - set(common_notes))
-		# print(common_notes)
-		# print(missing_notes_in_scale)
+		
+		print('all_notes: '+str(all_notes))
+		print('tonic_scale_notes: '+str(tonic_scale_notes))
+		print('common_notes: '+str(common_notes))
+		print('missing_notes_in_scale: '+str(missing_notes_in_scale))
 
 		# Convert notes in music to the closest in tonic scale
 		renamed_missing_notes = \
@@ -214,6 +219,8 @@ class Read(Score):
 		                     for renamed_notes in missing_notes_in_scale 
 		                     if renamed_notes in map_note_with_alias.keys()]
 		                     )
+
+		print(renamed_missing_notes)
 
 
 		# Apply the mapping transformation to the remaining notes
@@ -241,17 +248,17 @@ class Read(Score):
 			chord_df['grades'] = \
 			(chord_df['chord']
 			 .apply(lambda tuple_x:
-			        tuple([grades[map_tonic_with_scale[tonic]
+			        tuple([self.grades[tonic_scale_notes
 			              .index(chord_element[:-1])]+chord_element[-1]
 			              if chord_element[:-1] in tonic_scale_notes 
-			              else 'X'
+			              else self._apply_tonality_to_altered_notes(chord_element, tonic_scale_notes)
 			              for chord_element in tuple_x
 			              ])))
 		else:
 			chord_df['grades'] = \
 			(chord_df['chord']
 			 .apply(lambda tuple_x:
-			        tuple([grades[map_tonic_with_scale[tonic]
+			        tuple([self.grades[tonic_scale_notes
 			              .index(chord_element)]
 			              if chord_element in tonic_scale_notes 
 			              else 'X'
@@ -262,6 +269,37 @@ class Read(Score):
 
 
 		return chord_df[['chord','grades','dur']]
+
+	def _apply_tonality_to_altered_notes(self, chord_element, tonic_scale_notes):
+		
+		# position_in_tonic_scale is an array of one element, i.e. [2]
+		# If chord_element[:-1] is, for instance, Si, and the scale is Reb
+		# then, position_in_tonic_scale will contain [6]
+
+		# It attempts at finding which note within the scale is called in the same way
+		position_in_tonic_scale = [position for position, scale_note in enumerate(tonic_scale_notes) 
+								   # Sol and Sol# (compare if they coincide in more than one)
+								   # Avoid Si and Sol# which will give you one coincidence
+								   if scale_note[:2] == chord_element[:2]][0]
+
+		# In case, there are flats, and the note is called similarly, 
+		# Then the grade must be the same than the corresponding note in the scale but with +
+		# Sib (IV) -> Si natural -> (IV+)
+		if tonic_scale_notes[position_in_tonic_scale][-1] == 'b':
+			chord = self.grades[position_in_tonic_scale]
+
+			# If the note is Si and Dob is within the scale (only happens in Solb)
+			# Then they are the same note and should be corrected.
+			if ('Dob' in tonic_scale_notes) & (chord_element[:-1] == 'Si'): 
+				chord = self.grades[tonic_scale_notes.index('Dob')]
+
+		elif tonic_scale_notes[position_in_tonic_scale][-1] == '#':
+			chord = self.grades[(position_in_tonic_scale-1) % 7]
+
+		else:
+			chord = self.grades[position_in_tonic_scale]
+
+		return chord+chord_element[-1]+'+'
 
 	def divide_music_with_most_granular_tick(self):
 
@@ -480,19 +518,21 @@ if __name__ == "__main__":
 	name_file_midi = '../../scores/Schubert_S560_Schwanengesang_no7.csv'
 	name_file_midi = '../../scores/Brahms_symphony_2_2.csv' # Si M
 	name_file_midi = '../../scores/Brahms_symphony_2_1.csv'
-	name_file_midi = '../../scores/Bach-Partita_No1_in_Bb_BWV825_7Gigue.csv'
 	name_file_midi = '../../scores/Albeniz_Asturias.csv'
-	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_5.csv'
 	name_file_midi = '../../scores/Schuber_Impromptu_D_899_No_3.csv'
 	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_1.csv'
+	name_file_midi = '../../scores/Bach-Partita_No1_in_Bb_BWV825_7Gigue.csv'
+	name_file_midi = '../../scores/Mozart_Sonata_16.csv'
+	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_5.csv'
+	name_file_midi = '../../scores/Bach_Cello_Suite_No_1.csv'
 	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
 	#name_file_midi = '../../scores/Beethoven_Moonlight_Sonata_third_movement.csv'
 	#name_file_midi = '../../scores/Schubert_Piano_Trio_2nd_Movement.csv'
 	
-	chopin = Read(name_file_midi)
+	musical_piece = Read(name_file_midi)
 	# print(chopin.get_music_data().head())
 	#print(chopin.get_chord_from_tick().filter(['fullNoteOctave']))
-	print('La tonalidad es: '+chopin.get_tonality())
+	print('La tonalidad es: '+musical_piece.get_tonality())
 	# grades_chords = chopin.apply_tonality()
 	# grades_chords.to_csv('../tmp/'+name_file_midi[13:-4]+'_grades_chords.csv',
 	#                      header=True,
@@ -500,213 +540,8 @@ if __name__ == "__main__":
 
 	# print(grades_chords)
 
-	grades_sequence = [('V4', 'III5', 'III4', 'I5'),
-('IV2', 'I3', 'III5', 'I5'),
-('I3', 'I4', 'VI3', 'VI4', 'IV2', 'IV3', 'IV4', 'II5'),
-('I3', 'I4', 'III5', 'VI3', 'VI4', 'IV2', 'IV3', 'IV4'),
-('I3', 'I4', 'VI3', 'VI4', 'IV2', 'IV3', 'IV4', 'II5'),
-('I4', 'VI3', 'VI4', 'IV3', 'IV4', 'II5'),
-('III2', 'I3', 'II5'),
-('III2', 'I3', 'V4', 'V3', 'I4', 'I5', 'III3'),
-('III2', 'I3', 'V4', 'V3', 'III3', 'II4', 'II5'),
-('III2', 'I3', 'V4', 'V5', 'III4', 'I5', 'I4'),
-('V3', 'I5', 'I4', 'III4', 'III5'),
-('IV2', 'I3', 'III5'),
-('I3', 'I4', 'VI3', 'VI4', 'IV2', 'IV3', 'IV4', 'II5'),
-('I3', 'I4', 'III5', 'VI3', 'VI4', 'IV2', 'IV3', 'IV4'),
-('I3', 'I4', 'VI3', 'VI4', 'IV2', 'IV3', 'IV4', 'II5'),
-('I4', 'I5', 'VI3', 'VI4', 'IV3', 'IV4'),
-('V2', 'I5'),
-('X', 'III3', 'V4', 'V2', 'I4', 'I5'),
-('X', 'III3', 'V4', 'V2', 'II4', 'II5'),
-('X', 'V2', 'I4', 'III5', 'VI4', 'VI5', 'III4'),
-('X', 'V4', 'V5', 'V2', 'I4', 'III5', 'III4'),
-('V4', 'V5', 'V2', 'III5'),
-('V2', 'III4', 'III5'),
-('VI2',),
-('III3', 'III4', 'VI2', 'VI3', 'VI4', 'II4', 'II5'),
-('III3', 'III4', 'III5', 'VI2', 'VI3', 'VI4', 'II4'),
-('III3', 'III4', 'VI2', 'VI3', 'VI4', 'II4', 'II5'),
-('III3', 'I4', 'I5', 'VI3', 'VI4', 'III4'),
-('III3', 'VI3', 'V3', 'II4'),
-('III3', 'VI3', 'V3', 'I4'),
-('II2', 'II1'),
-('III6', 'III4', 'III5', 'VI4', 'VI5', 'II2', 'II1', 'IV4'),
-('VI4', 'VI5', 'IV4', 'II6', 'II4', 'II5'),
-('II4', 'VI4', 'VI5', 'II2', 'II1', 'II6', 'IV4', 'II5'),
-('I6', 'I4', 'I5', 'VI4', 'VI5', 'IV4'),
-('VI4', 'VI5', 'VII4', 'IV5', 'VII6', 'IV4', 'VII5'),
-('I6', 'I4', 'I5', 'VI4', 'VI5', 'IV4'),
-('I4', 'VI3', 'VI4', 'VI5', 'IV4', 'IV5'),
-('II2', 'VI2', 'II1'),
-('III6', 'III4', 'III5', 'VI2', 'VI4', 'VI5', 'II2', 'II1', 'IV4'),
-('II5', 'VI2', 'VI4', 'VI5', 'II2', 'II1', 'IV6', 'IV4', 'IV5'),
-('III6', 'III4', 'III5', 'VI2', 'VI4', 'VI5', 'II2', 'II1', 'IV4'),
-('VI4', 'VI5', 'IV4', 'II6', 'II4', 'II5'),
-('III6', 'III4', 'III5', 'VI4', 'VI5', 'IV4'),
-('VI4', 'VI5', 'IV4', 'II6', 'II4', 'II5'),
-('I6', 'I4', 'I5', 'VI4', 'VI5', 'IV4'),
-('VI4', 'VI5', 'IV4', 'II6', 'II4', 'II5'),
-('I6', 'I4', 'I5', 'VI4', 'VI5', 'IV4'),
-('VI4', 'VI5', 'IV4', 'VII6', 'VII4', 'VII5'),
-('II6',),
-('VI4', 'VI5', 'IV4', 'VII6', 'VII4', 'VII5'),
-('I6', 'I4', 'I5', 'VI4', 'VI5', 'IV4'),
-('VI3', 'VI4', 'VI5', 'IV4', 'II4', 'IV5'),
-('V2', 'V1', 'VI4', 'VI5', 'IV5'),
-('IV3', 'IV5', 'V2', 'IV4', 'V1'),
-('V4', 'V5', 'V2', 'V3', 'V1', 'VII4', 'II4', 'II5'),
-('VII6', 'VII5', 'V2', 'V1'),
-('V2', 'V1', 'II4', 'VII6', 'VII4', 'VII5'),
-('VI3', 'VI4', 'VI5', 'IV4', 'II4', 'IV5'),
-('IV3', 'IV4', 'IV5'),
-('IV3', 'II4', 'IV4', 'IV5'),
-('I6', 'IV6', 'X'),
-('X', 'IV6', 'IV4'),
-('IV6', 'IV4', 'III4'),
-('X', 'IV6', 'III4'),
-('IV6', 'X', 'I5'),
-('IV6', 'II4', 'IV5'),
-('I6', 'IV6', 'X'),
-('X', 'IV6', 'III4'),
-('X', 'X', 'I4'),
-('X', 'X', 'I4'),
-('X', 'I4', 'I5'),
-('X', 'X', 'I4'),
-('I7', 'I4'),
-('I6', 'I7', 'I4'),
-('X', 'IV5'),
-('X', 'II4', 'IV5'),
-('X', 'IV4', 'IV5'),
-('X', 'I5', 'IV5'),
-('V5', 'VII6', 'VII5'),
-('X', 'X', 'X'),
-('X', 'I4', 'IV5'),
-('X', 'IV4', 'IV5'),
-('X', 'IV4', 'IV5'),
-('X', 'IV4', 'IV5'),
-('X', 'V5', 'X', 'X'),
-('V5', 'V3', 'VII5'),
-('V4', 'I4', 'X'),
-('V4', 'I4', 'I5'),
-('III3', 'III4'),
-('III3', 'VII5'),
-('I3', 'X', 'I5'),
-('X', 'X', 'II5'),
-('IV3', 'X', 'II5'),
-('X', 'X', 'I5'),
-('X', 'I4', 'I5'),
-('V4', 'X', 'X'),
-('V4', 'I4', 'X'),
-('X', 'IV4', 'X'),
-('X', 'IV3', 'IV4')]
-
-
-	grades_sequence_chopin = [('I2', 'I1', 'I4'),
-('I2', 'I1', 'V3'),
-('I2', 'I1', 'III4'),
-('I2', 'V4', 'I1'),
-('I2', 'I1', 'I5'),
-('I2', 'V4', 'I1'),
-('I2', 'I1', 'III5'),
-('I2', 'I1', 'V5'),
-('I2', 'I1', 'I6'),
-('I2', 'I1', 'V5'),
-('I2', 'I1', 'III6'),
-('I2', 'V6', 'I1'),
-('I2', 'I1', 'I7'),
-('I2', 'V4', 'I1'),
-('V2', 'X', 'V1'),
-('X', 'X', 'X'),
-('IV2', 'IV1', 'I5'),
-('IV2', 'IV1', 'III5'),
-('IV2', 'IV1', 'I4'),
-('IV2', 'IV1', 'III6'),
-('IV2', 'IV1', 'I6'),
-('X', 'X', 'X'),
-('IV2', 'IV1', 'I5'),
-('II3', 'V2', 'V1'),
-('III3', 'III2', 'VII4'),
-('X', 'X', 'VII4'),
-('V4', 'V2', 'V1'),
-('II3', 'V2', 'V1'),
-('III3', 'III2', 'VII4'),
-('I6', 'VI1', 'VI2'),
-('I2', 'I3'),
-('I2', 'I3'),
-('I2', 'I1', 'V3'),
-('I2', 'I1', 'I4'),
-('I2', 'I1', 'III5'),
-('I2', 'I1', 'VII4'),
-('I2', 'V4', 'I1'),
-('I2', 'I1', 'I4'),
-('I2', 'V4', 'I1'),
-('I2', 'I4'),
-('I2', 'I3', 'I6'),
-('I2', 'I3', 'I6'),
-('I2', 'I3', 'V5'),
-('I2', 'I3', 'X'),
-('I2', 'I3', 'III6'),
-('I2', 'I3', 'I4'),
-('I2', 'I3', 'V4'),
-('I2', 'I3', 'X'),
-('I2', 'I3', 'III6'),
-('I2', 'I3', 'I6'),
-('I2', 'I3', 'V5'),
-('I2', 'I3', 'X'),
-('I2', 'I3', 'III6'),
-('I2', 'I3', 'I6'),
-('I2', 'I3', 'V4'),
-('I2', 'I3', 'X'),
-('I2', 'I3', 'III6'),
-('I2', 'I3', 'I6'),
-('I2', 'I3', 'V4'),
-('I2', 'I3', 'X'),
-('I2', 'I3', 'III6'),
-('I2', 'I3', 'I6'),
-('I2', 'I3', 'V4'),
-('I2', 'I3', 'X'),
-('I2', 'I3', 'III6'),
-('I2', 'I3', 'I6'),
-('I2', 'I3', 'V4'),
-('I2', 'I3', 'X'),
-('I2', 'I3', 'III6'),
-('I2', 'I3', 'I6'),
-('I2', 'I3', 'V4'),
-('I2', 'I3', 'X'),
-('I2', 'I3', 'III6'),
-('I2', 'I3', 'I6'),
-('I2', 'I3', 'V4'),
-('I2', 'I3', 'X'),
-('I2', 'I3', 'III6'),
-('I2', 'I3', 'I6'),
-('I2', 'I3', 'V4'),
-('I2', 'I3', 'X'),
-('I2', 'I3', 'III6'),
-('I2', 'I3', 'I6'),
-('I2', 'I3', 'V4'),
-('I2', 'I3', 'X'),
-('I2', 'I3', 'III6'),
-('I2', 'I3', 'I6'),
-('I2', 'I3', 'V4'),
-('I2', 'I3', 'X'),
-('I2', 'I3', 'III6'),
-('I2', 'I3', 'I6'),
-('I2', 'I3', 'V4'),
-('I2', 'I3', 'X'),
-('I2', 'I3', 'III6'),
-('I2', 'I3', 'I6'),
-('I2', 'I3', 'V4'),
-('I2', 'I3', 'X'),
-('I2', 'I3', 'III6'),
-('I2', 'I3', 'I6'),
-('I2', 'I3', 'V4'),
-('I2', 'I3', 'X')]
-
-	chords_notes = chopin.convert_grades_sequence_to_notes(grades_sequence, chopin.get_tonality())
-
-	polyphony = SequenceChordPolyphony(chords_notes)
-	CSVtoMIDI(polyphony.convert_to_midi(),'my_first_polyphony')
+	grades_chords = musical_piece.apply_tonality()
+	print(grades_chords)
 
 
 
