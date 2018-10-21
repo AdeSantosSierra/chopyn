@@ -45,7 +45,7 @@ class Polyphony (object):
 		extended_music_dataframe_list = []
 
 		print('-------Fallan aqui los .loc')
-		for a, df_gb in music_dataframe.groupby(['velocity','pitch','part']):
+		for _, df_gb in music_dataframe.groupby(['velocity','pitch','part']):
 			df_gb.loc[:,'next_start_ms'] = ((df_gb['start_ms']+df_gb['dur_ms'])
 			                          .shift(1)
 			                          .fillna(0)
@@ -53,7 +53,6 @@ class Polyphony (object):
 			df_gb.loc[:,'diff_start_ms'] = ((df_gb['start_ms']-df_gb['next_start_ms'])>0).astype(int)
 			df_gb.loc[:,'cum_sum'] = np.cumsum(df_gb['diff_start_ms'])
 			# print(df_gb[['dur_ms','start_ms','next_start_ms','diff_start_ms','grad','cum_sum']])
-
 			extended_music_dataframe_list.append(df_gb
 			 .groupby(['cum_sum','pitch','velocity','part'])
 			 .agg({'start_ms':min, 'dur_ms':sum})
