@@ -20,6 +20,10 @@ logger = logging.getLogger(__name__)
 logger.setLevel('INFO')
 
 import sys
+
+import os
+import urllib2
+
 # import folders with the code
 # At the moment, there is not other way of importing 
 
@@ -133,7 +137,6 @@ class Read(Score):
 		      .head(1)['name_note'][0]
 		      )
 
-
 	def get_tonality(self):
 		tonalities = \
 					 ({'Do':['Do','Re','Mi','Fa','Sol','La','Si'],
@@ -207,11 +210,6 @@ class Read(Score):
 			common_notes = list(set(tonic_scale_notes) & set(all_notes))
 
 		missing_notes_in_scale = list(set(tonic_scale_notes) - set(common_notes))
-		
-		print('all_notes: '+str(all_notes))
-		print('tonic_scale_notes: '+str(tonic_scale_notes))
-		print('common_notes: '+str(common_notes))
-		print('missing_notes_in_scale: '+str(missing_notes_in_scale))
 
 		# Convert notes in music to the closest in tonic scale
 		renamed_missing_notes = \
@@ -252,6 +250,7 @@ class Read(Score):
 			              .index(chord_element[:-1])]+chord_element[-1]
 			              if chord_element[:-1] in tonic_scale_notes 
 			              else self._apply_tonality_to_altered_notes(chord_element, tonic_scale_notes)
+			              # else 'X'
 			              for chord_element in tuple_x
 			              ])))
 		else:
@@ -447,16 +446,33 @@ class Read(Score):
 			for note in chord:
 				if note != 'X':
 					# Extract octave
-					octave = int(note[-1])
-					note_name = note[:-1]
-					converted_note = tonality_scale[grade_mapping[note_name]]
-					if converted_note[-1] == 'b' or converted_note[-1] == '#':
-						alteration = converted_note[-1]
-						name_note  = converted_note[:-1]
-					else:
-						alteration = ''
-						name_note  = converted_note
+					if note[-1] != '+':
+						octave = int(note[-1])
+						note_name = note[:-1]
+						converted_note = tonality_scale[grade_mapping[note_name]]
+						if converted_note[-1] == 'b' or converted_note[-1] == '#':
+							alteration = converted_note[-1]
+							name_note  = converted_note[:-1]
+						else:
+							alteration = ''
+							name_note  = converted_note
 
+					else:
+						# Here, we have VI4+, II5+, ...
+						print('Pasa por aqui ----')
+						print(note)
+						octave = int(note[-2])
+						note_name = note[:-2]
+						converted_note = tonality_scale[grade_mapping[note_name]]
+
+						if converted_note[-1] == 'b':
+							alteration = ''
+							name_note  = converted_note[:-1]
+						else:
+							alteration = '#'
+							name_note  = converted_note
+
+						print([octave, note_name, name_note])
 				else:
 					# In case of X, then use tonic
 					converted_note = tonic
@@ -481,7 +497,86 @@ class Read(Score):
 				
 		return notes_sequence
 
-		
+	def download_midi_music(self):
+		sources                              = {}
+		sources['classical']                 = {}
+		sources['classical']['alkan']        = ['http://www.classicalmidi.co.uk/alkan.htm']
+		sources['classical']['adam']         = ['http://www.classicalmidi.co.uk/adam.htm']
+		sources['classical']['aguado']       = ['http://www.classicalmidi.co.uk/aguadodion.htm']	
+
+		midi_files = {}
+		datadir = '/Users/adesant3/Documents/Kindergarten/chopyn/data/'
+
+
+		import urllib2
+		response = urllib2.urlopen('http://python.org/')
+		html = response.read()
+
+
+		if os.path.exists(os.path.join(datadir, 'do-not-redownload.txt')):
+			print 'Already completely downloaded, delete do-not-redownload.txt to check for files to download.'
+			return
+		for genre in sources:
+			midi_files[genre] = {}
+			print(genre)
+			for composer in sources[genre]:
+				midi_files[genre][composer] = []
+	        	for url in sources[genre][composer]:
+					print(url)
+					response = urllib2.urlopen(url)
+					#if 'classicalmidi' in url:
+					#  headers = response.info()
+					#  print headers
+					data = response.read()
+
+					#htmlinks = re.findall('"(  ?[^"]+\.htm)"', data)
+					#for link in htmlinks:
+					#  print 'http://www.classicalmidi.co.uk/'+strip(link)
+	          
+					# make urls absolute:
+					urlparsed = urlparse.urlparse(url)
+					data = re.sub('href="\/', 'href="http://'+urlparsed.hostname+'/', data, flags= re.IGNORECASE)
+					data = re.sub('href="(?!http:)', 'href="http://'+urlparsed.hostname+urlparsed.path[:urlparsed.path.rfind('/')]+'/', data, flags= re.IGNORECASE)
+					#if 'classicalmidi' in url:
+					#  print data
+	          
+					links = re.findall('"(http://[^"]+\.mid)"', data)
+					for link in links:
+						cont = False
+						for p in ignore_patterns:
+							if p in link:
+								print 'Not downloading links with {}'.format(p)
+								cont = True
+								continue
+						if cont: continue
+						print link
+						filename = link.split('/')[-1]
+						valid_chars = "-_.()%s%s" % (string.ascii_letters, string.digits)
+						filename = ''.join(c for c in filename if c in valid_chars)
+						print genre+'/'+composer+'/'+filename
+						midi_files[genre][composer].append(filename)
+						localdir = os.path.join(os.path.join(self.datadir, genre), composer)
+						localpath = os.path.join(localdir, filename)
+						if os.path.exists(localpath):
+							print 'File exists. Not redownloading: {}'.format(localpath)
+						else:
+							try:
+								response_midi = urllib2.urlopen(link)
+								try: os.makedirs(localdir)
+								except: pass
+								data_midi = response_midi.read()
+								if 'DOCTYPE html PUBLIC' in data_midi:
+									print 'Seems to have been served an html page instead of a midi file. Continuing with next file.'
+								elif 'RIFF' in data_midi[0:9]:
+									print 'Seems to have been served an RIFF file instead of a midi file. Continuing with next file.'
+								else:
+									with open(localpath, 'w') as f:
+										f.write(data_midi)
+							except:
+								print 'Failed to fetch {}'.format(link)
+		with open(os.path.join(self.datadir, 'do-not-redownload.txt'), 'w') as f:
+			f.write('This directory is considered completely downloaded.')
+
 def _get_note_name_without_octave(fullNoteOctave):
 	# Function to get the name, regardless the octave
 
@@ -532,7 +627,7 @@ if __name__ == "__main__":
 	musical_piece = Read(name_file_midi)
 	# print(chopin.get_music_data().head())
 	#print(chopin.get_chord_from_tick().filter(['fullNoteOctave']))
-	print('La tonalidad es: '+musical_piece.get_tonality())
+	# print('La tonalidad es: '+musical_piece.get_tonality())
 	# grades_chords = chopin.apply_tonality()
 	# grades_chords.to_csv('../tmp/'+name_file_midi[13:-4]+'_grades_chords.csv',
 	#                      header=True,
@@ -540,7 +635,7 @@ if __name__ == "__main__":
 
 	# print(grades_chords)
 
-	grades_chords = musical_piece.apply_tonality()
+	grades_chords = musical_piece.download_midi_music()
 	print(grades_chords)
 
 

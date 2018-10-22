@@ -321,7 +321,7 @@ if __name__ == '__main__':
 	logger.info('Extract the sequence of chords')
 
 
-	name_model = 'n_input_'+str(n_input)+'_iters_'+str(training_iters)+'_'+name_file_midi[13:-4]
+	name_model = 'n_input_'+str(n_input)+'_chromatic'+'_iters_'+str(training_iters)+'_'+name_file_midi[13:-4]
 	dir_name_model = '../models/'+name_model
 
 	if not os.path.exists(dir_name_model):
@@ -360,10 +360,12 @@ if __name__ == '__main__':
 	print(dir_name_model+'/'+name_model+'-'+str(training_iters)+'.meta')
 	music_creation = \
 	music_creator.load_and_predict(dir_name_model,
-	                               dir_name_model+'/'+name_model+'-'+str(41000)+'.meta',
+	                               dir_name_model+'/'+name_model+'-'+str(68000)+'.meta',
 	                               initial_sequence_chords,
 	                               sequence_length = sequence_length
 	                               )
+
+	print(music_creation)
 
 	logger.info('Convert grades to sequences')
 	chords_notes = (musical_piece
