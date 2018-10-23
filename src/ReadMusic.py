@@ -459,8 +459,6 @@ class Read(Score):
 
 					else:
 						# Here, we have VI4+, II5+, ...
-						print('Pasa por aqui ----')
-						print(note)
 						octave = int(note[-2])
 						note_name = note[:-2]
 						converted_note = tonality_scale[grade_mapping[note_name]]
