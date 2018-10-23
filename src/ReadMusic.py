@@ -623,7 +623,7 @@ class Read(Score):
 		sources['classical']['puccini']      = ['http://www.classicalmidi.co.uk/puccini.htm']
 		sources['classical']['rachmaninov']  = ['http://www.midiworld.com/rachmaninov.htm','http://www.classicalmidi.co.uk/rach.htm']
 		sources['classical']['ravel']        = ['http://www.classicalmidi.co.uk/ravel1.htm']
-		sources['classical']['respig']       = ['http://www.classicalmidi.co.uk/respig.htm']
+		# sources['classical']['respig']       = ['http://www.classicalmidi.co.uk/respig.htm']
 		sources['classical']['rimsky']       = ['http://www.classicalmidi.co.uk/rimsky.htm']
 		sources['classical']['rossini']      = ['http://www.classicalmidi.co.uk/rossini.htm']
 		sources['classical']['strauss']     = ['http://www.classicalmidi.co.uk/rstrauss.htm']
@@ -671,58 +671,61 @@ class Read(Score):
 				midi_files[genre][composer] = []
 				print('---------------'+composer+'--------------')
 				for url in sources[genre][composer]:
-					print('**************'+url+'**************')
-					response = urllib2.urlopen(url)
-					#if 'classicalmidi' in url:
-					#  headers = response.info()
-					#  print headers
-					data = response.read()
+					try:
+						print('**************'+url+'**************')
+						response = urllib2.urlopen(url)
+						#if 'classicalmidi' in url:
+						#  headers = response.info()
+						#  print headers
+						data = response.read()
 
-					#htmlinks = re.findall('"(  ?[^"]+\.htm)"', data)
-					#for link in htmlinks:
-					#  print 'http://www.classicalmidi.co.uk/'+strip(link)
+						#htmlinks = re.findall('"(  ?[^"]+\.htm)"', data)
+						#for link in htmlinks:
+						#  print 'http://www.classicalmidi.co.uk/'+strip(link)
 
-					# make urls absolute:
-					urlparsed = urlparse.urlparse(url)
-					data = re.sub('href="\/', 'href="http://'+urlparsed.hostname+'/', data, flags= re.IGNORECASE)
-					data = re.sub('href="(?!http:)', 'href="http://'+urlparsed.hostname+urlparsed.path[:urlparsed.path.rfind('/')]+'/', data, flags= re.IGNORECASE)
-					#if 'classicalmidi' in url:
-					#  print data
-					
-					links = re.findall('"(http://[^"]+\.mid)"', data)
-					for link in links:
-						cont = False
-						for p in ignore_patterns:
-							if p in link:
-								print 'Not downloading links with {}'.format(p)
-								cont = True
-								continue
-						if cont: continue
-						# print link
-						filename = link.split('/')[-1]
-						valid_chars = "-_.()%s%s" % (string.ascii_letters, string.digits)
-						filename = ''.join(c for c in filename if c in valid_chars)
-						#print genre+'/'+composer+'/'+filename
-						midi_files[genre][composer].append(filename)
-						localdir = os.path.join(os.path.join(datadir, genre), composer)
-						localpath = os.path.join(localdir, filename)
-						if os.path.exists(localpath):
-							print 'File exists. Not redownloading: {}'.format(localpath)
-						else:
-							try:
-								response_midi = urllib2.urlopen(link)
-								try: os.makedirs(localdir)
-								except: pass
-								data_midi = response_midi.read()
-								if 'DOCTYPE html PUBLIC' in data_midi:
-									print 'Seems to have been served an html page instead of a midi file. Continuing with next file.'
-								elif 'RIFF' in data_midi[0:9]:
-									print 'Seems to have been served an RIFF file instead of a midi file. Continuing with next file.'
-								else:
-									with open(localpath, 'w') as f:
-										f.write(data_midi)
-							except:
-								print 'Failed to fetch {}'.format(link)
+						# make urls absolute:
+						urlparsed = urlparse.urlparse(url)
+						data = re.sub('href="\/', 'href="http://'+urlparsed.hostname+'/', data, flags= re.IGNORECASE)
+						data = re.sub('href="(?!http:)', 'href="http://'+urlparsed.hostname+urlparsed.path[:urlparsed.path.rfind('/')]+'/', data, flags= re.IGNORECASE)
+						#if 'classicalmidi' in url:
+						#  print data
+						
+						links = re.findall('"(http://[^"]+\.mid)"', data)
+						for link in links:
+							cont = False
+							for p in ignore_patterns:
+								if p in link:
+									print 'Not downloading links with {}'.format(p)
+									cont = True
+									continue
+							if cont: continue
+							# print link
+							filename = link.split('/')[-1]
+							valid_chars = "-_.()%s%s" % (string.ascii_letters, string.digits)
+							filename = ''.join(c for c in filename if c in valid_chars)
+							#print genre+'/'+composer+'/'+filename
+							midi_files[genre][composer].append(filename)
+							localdir = os.path.join(os.path.join(datadir, genre), composer)
+							localpath = os.path.join(localdir, filename)
+							if os.path.exists(localpath):
+								print 'File exists. Not redownloading: {}'.format(localpath)
+							else:
+								try:
+									response_midi = urllib2.urlopen(link)
+									try: os.makedirs(localdir)
+									except: pass
+									data_midi = response_midi.read()
+									if 'DOCTYPE html PUBLIC' in data_midi:
+										print 'Seems to have been served an html page instead of a midi file. Continuing with next file.'
+									elif 'RIFF' in data_midi[0:9]:
+										print 'Seems to have been served an RIFF file instead of a midi file. Continuing with next file.'
+									else:
+										with open(localpath, 'w') as f:
+											f.write(data_midi)
+								except:
+									print 'Failed to fetch {}'.format(link)
+					except:
+						print('The composer '+composer+' is not available')
 		with open(os.path.join(datadir, 'do-not-redownload.txt'), 'w') as f:
 			f.write('This directory is considered completely downloaded.')
 
