@@ -496,6 +496,8 @@ class Read(Score):
 		return notes_sequence
 
 	def download_midi_music(self):
+		# Based on the work done by
+		# Written by Olof Mogren, http://mogren.one/
 		
 		ignore_patterns                      = ['xoom']
 		sources                              = {}
@@ -554,7 +556,7 @@ class Read(Score):
 		sources['classical']['dialoc']       = ['http://www.classicalmidi.co.uk/diaoc.htm']
 		sources['classical']['dupre']        = ['http://www.classicalmidi.co.uk/dupre.htm']
 		sources['classical']['dussek']       = ['http://www.classicalmidi.co.uk/dussek.htm']
-		sources['classical']['dvorak']       = ['http://www.classicalmidi.co.uk/dvok.htm']
+		# sources['classical']['dvorak']       = ['http://www.classicalmidi.co.uk/dvok.htm']
 		sources['classical']['elgar']        = ['http://www.classicalmidi.co.uk/elgar.htm']
 		sources['classical']['eshpai']       = ['http://www.classicalmidi.co.uk/Eshpai.htm', 'http://www.classicalmidi.co.uk/Eshpai%20.htm']
 		sources['classical']['faure']        = ['http://www.classicalmidi.co.uk/faure.htm']
@@ -601,7 +603,7 @@ class Read(Score):
 		sources['classical']['marcello']     = ['http://www.classicalmidi.co.uk/marcello.htm']
 		sources['classical']['martini']      = ['http://www.classicalmidi.co.uk/martini.htm']
 		sources['classical']['mehul']        = ['http://www.classicalmidi.co.uk/mehul.htm']
-		sources['classical']['mendelssohn']  = ['http://www.midiworld.com/mendelssohn.htm','http://www.classicalmidi.co.uk/mend.htm']
+		sources['classical']['mendelssohn']  = ['http://www.midiworld.com/mendelssohn.htm']
 		sources['classical']['messager']     = ['http://www.classicalmidi.co.uk/messager.htm']
 		sources['classical']['messia']       = ['http://www.classicalmidi.co.uk/messia.htm']
 		sources['classical']['meyerbeer']    = ['http://www.classicalmidi.co.uk/meyerbeer.htm']
@@ -634,7 +636,7 @@ class Read(Score):
 		sources['classical']['schubert']     = ['http://www.classicalmidi.co.uk/schubert.htm']
 		sources['classical']['schumann']     = ['http://www.midiworld.com/schumann.htm', 'http://www.classicalmidi.co.uk/schuman.htm']
 		sources['classical']['scriabin']     = ['http://www.midiworld.com/scriabin.htm']
-		sources['classical']['shostakovich'] = ['http://www.classicalmidi.co.uk/shost.htm']
+		# sources['classical']['shostakovich'] = ['http://www.classicalmidi.co.uk/shost.htm']
 		sources['classical']['sibelius']     = ['http://www.classicalmidi.co.uk/sibelius.htm']
 		sources['classical']['soler']        = ['http://www.classicalmidi.co.uk/soler.htm']
 		sources['classical']['sor']          = ['http://www.classicalmidi.co.uk/sor.htm']
@@ -642,7 +644,6 @@ class Read(Score):
 		sources['classical']['stravinsky']   = ['http://www.classicalmidi.co.uk/strav.htm']
 		sources['classical']['sullivan']     = ['http://www.classicalmidi.co.uk/sull.htm']
 		sources['classical']['susato']       = ['http://www.classicalmidi.co.uk/susato.htm']
-		sources['classical']['taktak']       = ['http://www.classicalmidi.co.uk/taktak.htm']
 		sources['classical']['taylor']       = ['http://www.classicalmidi.co.uk/taylor.htm']
 		sources['classical']['tchaikovsky']  = ['http://www.midiworld.com/tchaikovsky.htm','http://www.classicalmidi.co.uk/tch.htm']
 		sources['classical']['thomas']       = ['http://www.classicalmidi.co.uk/thomas.htm']
@@ -651,11 +652,10 @@ class Read(Score):
 		sources['classical']['vivaldi']      = ['http://www.classicalmidi.co.uk/vivaldi.htm']
 		sources['classical']['wagner']       = ['http://www.classicalmidi.co.uk/wagner.htm']
 		sources['classical']['walton']       = ['http://www.classicalmidi.co.uk/walton.htm']
-		sources['classical']['wolf']         = ['http://www.classicalmidi.co.uk/wolf.htm']
 		sources['classical']['wyschnegradsky'] = ['http://www.classicalmidi.co.uk/Wyschnegradsky.htm']
 		sources['classical']['yradier']      = ['http://www.classicalmidi.co.uk/yradier.htm']
-		
-		
+
+
 		midi_files = {}
 		datadir = '/Users/adesant3/Documents/Kindergarten/chopyn/data/'
 
@@ -669,7 +669,9 @@ class Read(Score):
 			midi_files[genre] = {}
 			for composer in sources[genre]:
 				midi_files[genre][composer] = []
+				print('---------------'+composer+'--------------')
 				for url in sources[genre][composer]:
+					print('**************'+url+'**************')
 					response = urllib2.urlopen(url)
 					#if 'classicalmidi' in url:
 					#  headers = response.info()
@@ -686,10 +688,8 @@ class Read(Score):
 					data = re.sub('href="(?!http:)', 'href="http://'+urlparsed.hostname+urlparsed.path[:urlparsed.path.rfind('/')]+'/', data, flags= re.IGNORECASE)
 					#if 'classicalmidi' in url:
 					#  print data
-					print(data)
 					
 					links = re.findall('"(http://[^"]+\.mid)"', data)
-					print(links)
 					for link in links:
 						cont = False
 						for p in ignore_patterns:
