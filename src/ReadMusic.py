@@ -569,7 +569,7 @@ class Read(Score):
 		sources['classical']['german']       = ['http://www.classicalmidi.co.uk/german.htm']
 		sources['classical']['gershwin']     = ['http://www.classicalmidi.co.uk/gershwin.htm']
 		sources['classical']['gilbert']      = ['http://www.classicalmidi.co.uk/gilbert.htm']
-		sources['classical']['ginast']       = ['http://www.classicalmidi.co.uk/ginast.htm']
+		# sources['classical']['ginast']       = ['http://www.classicalmidi.co.uk/ginast.htm']
 		sources['classical']['gott']         = ['http://www.classicalmidi.co.uk/gott.htm']
 		sources['classical']['gounod']       = ['http://www.classicalmidi.co.uk/gounod.htm']
 		sources['classical']['grain']        = ['http://www.classicalmidi.co.uk/grain.htm']
