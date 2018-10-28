@@ -289,7 +289,7 @@ class CreateMusicFromChords(object):
 	    return pred
 
 
-class CreateMusic(object):
+class PlayMusicFromChords(object):
 
 	def __init__(self, name_file_midi, 
 	             n_input = 20, 
@@ -392,9 +392,9 @@ if __name__ == '__main__':
 	#name_file_midi = '../../scores/Beethoven_Moonlight_Sonata_third_movement.csv'
 	#name_file_midi = '../../scores/Schubert_Piano_Trio_2nd_Movement.csv'
 	
-	CreateMusic(name_file_midi, 
-	            n_input = 20, 
-	            training_iters = 100000, 
-	            sequence_length = 500, 
-	            model_version_to_load = 99000, 
-	            bool_train = False)
+	PlayMusicFromChords(name_file_midi, 
+	                    n_input = 20, 
+	                    training_iters = 100000, 
+	                    sequence_length = 500, 
+	                    model_version_to_load = 99000, 
+	                    bool_train = False)
