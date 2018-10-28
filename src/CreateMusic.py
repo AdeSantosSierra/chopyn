@@ -273,11 +273,6 @@ class CreateMusicFromChords(object):
 	    rnn_cell = rnn.MultiRNNCell([rnn.BasicLSTMCell(n_hidden),
 	                                rnn.BasicLSTMCell(n_hidden),
 	                                rnn.BasicLSTMCell(n_hidden)])
-	    
-	    # 1-layer LSTM with n_hidden units but with lower accuracy.
-	    # Average Accuracy= 90.60% 50k iter
-	    # Uncomment line below to test but comment out the 2-layer rnn.MultiRNNCell above
-	    # rnn_cell = rnn.BasicLSTMCell(n_hidden)
 
 	    # generate prediction
 	    outputs, states = rnn.static_rnn(rnn_cell, x, dtype=tf.float32)
@@ -369,7 +364,86 @@ class PlayMusicFromChords(object):
 		logger.info('Finished!!!')
 
 
+class CreateMusicFromDataframe(object):
 
+	def __init__(self, music_data, training_iters, n_input):
+
+		self.training_iters = training_iters
+		self.display_step = 1000
+		self.n_input = n_input
+
+		# Read musical data
+		self.training_data = music_data
+		self.num_columns_training_data = self.training_data.shape[1]
+
+		# Target log path
+		path_logs = '../tmp'
+		self.writer = tf.summary.FileWriter(path_logs)
+
+
+	def config_LSTM(self):
+		# Parameters
+		learning_rate = 0.001
+
+		# number of units in RNN cell
+		n_hidden = 1024
+
+		# tf Graph input
+		self.x = tf.placeholder(tf.float32, 
+		                        shape=(self.n_input, self.num_columns_training_data), 
+		                        name = 'x')
+		self.y = tf.placeholder(tf.float32, 
+		                        shape=(self.num_columns_training_data, 1),
+		                        name = 'y'
+		                        )
+
+		# RNN output node weights and biases
+		weights = {
+		    'out': tf.Variable(tf.random_normal([n_hidden, 1]))
+		}
+		biases = {
+		    'out': tf.Variable(tf.random_normal([self.num_columns_training_data, 1]))
+		}
+
+		pred = self.RNN(self.x, weights, biases, n_hidden)
+
+		# Loss and optimizer
+		cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=pred, labels=self.y), name='cost')
+		optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate).minimize(cost)
+
+		# Model evaluation
+		correct_pred = tf.equal(tf.argmax(pred,1), tf.argmax(self.y,1))
+		accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
+
+		# Initializing the variables
+		self.init = tf.global_variables_initializer()
+		self.saver = tf.train.Saver()
+
+		return optimizer, accuracy, cost, pred
+
+	def RNN(self, x, weights, biases, n_hidden):
+	    
+	    # reshape to [1, n_input]
+	    x = tf.reshape(x, [-1, self.n_input])
+
+	    # Generate a n_input-element sequence of inputs
+	    # (eg. [had] [a] [general] -> [20] [6] [33])
+	    x = tf.split(x,self.n_input,1)
+
+	    # 2-layer LSTM, each layer has n_hidden units.
+	    # Average Accuracy= 95.20% at 50k iter
+	    rnn_cell = rnn.MultiRNNCell([rnn.BasicLSTMCell(n_hidden),
+	                                rnn.BasicLSTMCell(n_hidden),
+	                                rnn.BasicLSTMCell(n_hidden)])
+
+	    # generate prediction
+	    outputs, states = rnn.static_rnn(rnn_cell, x, dtype=tf.float32)
+
+	    # there are n_input outputs but
+	    # we only want the last output
+	    pred = tf.matmul(outputs[-1], weights['out']) + biases['out']
+	    tf.identity(pred, 'pred')
+	    return pred
 
 
 
@@ -387,14 +461,31 @@ if __name__ == '__main__':
 	name_file_midi = '../../scores/Bach-Partita_No1_in_Bb_BWV825_7Gigue.csv'
 	name_file_midi = '../../scores/Brahms_symphony_2_1.csv'
 	name_file_midi = '../../scores/Bach_Cello_Suite_No_1.csv'
-	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
 	name_file_midi = '../../scores/Gymnopedie_No_1.csv'
+	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
 	#name_file_midi = '../../scores/Beethoven_Moonlight_Sonata_third_movement.csv'
 	#name_file_midi = '../../scores/Schubert_Piano_Trio_2nd_Movement.csv'
 	
-	PlayMusicFromChords(name_file_midi, 
-	                    n_input = 20, 
-	                    training_iters = 100000, 
-	                    sequence_length = 500, 
-	                    model_version_to_load = 99000, 
-	                    bool_train = False)
+	# PlayMusicFromChords(name_file_midi, 
+	#                     n_input = 20, 
+	#                     training_iters = 100000, 
+	#                     sequence_length = 500, 
+	#                     model_version_to_load = 99000, 
+	#                     bool_train = False)
+
+	musical_piece = Read(name_file_midi)
+
+	print('La tonalidad es: '+musical_piece.get_tonality())
+
+	logger.info('Obtain the main dataframe of the musical piece')
+	musical_dataframe = musical_piece.convert_tonality_to_music_dataframe()
+
+
+	music_creator = CreateMusicFromDataframe(musical_dataframe,
+		                                     training_iters = 100000,
+		                                     n_input = 20
+		                                     )	
+
+	logger.info('Config LSTM')
+	optimizer, accuracy, cost, pred = music_creator.config_LSTM()
+
