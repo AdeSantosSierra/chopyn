@@ -495,6 +495,36 @@ class Read(Score):
 				
 		return notes_sequence
 
+	def convert_tonality_to_music_dataframe(self):
+
+		num_octaves = 8
+		all_grades = ['I','I+','II','II+','III','IV','IV+','V','V+','VI','VI+','VII']
+
+		grades_as_columns = list()
+
+		# Calculate the names of all the columns depending on the num of octaves
+		# ['I','I+', ...] -> ['I1','I1+', ..., 'V5','V5+']
+		for iter_num_octaves in range(1, num_octaves+1):
+			for iter_grade in all_grades:
+				if iter_grade[-1] != '+':
+					grades_as_columns.extend([iter_grade+str(iter_num_octaves)])
+				else:
+					grades_as_columns.extend([iter_grade[:-1]+str(iter_num_octaves)+'+'])
+
+		# Create a dataframe with all the columns
+		grades_dataframe = pd.DataFrame(columns = grades_as_columns)
+
+		# Obtain tonality and grades sequence
+		grades_and_duration = self.apply_tonality()
+
+		# In every position, store the duration
+		for iter_grades_dataframe in range(0,grades_and_duration.shape[0]):
+			grades_dataframe.loc[iter_grades_dataframe,grades_and_duration['grades'][iter_grades_dataframe]] = \
+			grades_and_duration['dur'][iter_grades_dataframe]
+
+		# Return dataframe with grades and duration
+		return grades_dataframe.fillna(0)
+
 	def download_midi_music(self):
 		# Based on the work done by
 		# Written by Olof Mogren, http://mogren.one/
@@ -764,14 +794,14 @@ if __name__ == "__main__":
 
 	name_file_midi = '../../scores/Schubert_S560_Schwanengesang_no7.csv'
 	name_file_midi = '../../scores/Brahms_symphony_2_2.csv' # Si M
-	name_file_midi = '../../scores/Brahms_symphony_2_1.csv'
 	name_file_midi = '../../scores/Albeniz_Asturias.csv'
 	name_file_midi = '../../scores/Schuber_Impromptu_D_899_No_3.csv'
 	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_1.csv'
 	name_file_midi = '../../scores/Bach-Partita_No1_in_Bb_BWV825_7Gigue.csv'
 	name_file_midi = '../../scores/Mozart_Sonata_16.csv'
-	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_5.csv'
 	name_file_midi = '../../scores/Bach_Cello_Suite_No_1.csv'
+	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_5.csv'
+	name_file_midi = '../../scores/Brahms_symphony_2_1.csv'
 	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
 	#name_file_midi = '../../scores/Beethoven_Moonlight_Sonata_third_movement.csv'
 	#name_file_midi = '../../scores/Schubert_Piano_Trio_2nd_Movement.csv'
@@ -785,10 +815,10 @@ if __name__ == "__main__":
 	#                      header=True,
 	#                      index_label=None)
 
-	# print(grades_chords)
+	print(musical_piece.convert_tonality_to_music_dataframe())
 
-	grades_chords = musical_piece.download_midi_music()
-	print(grades_chords)
+	# grades_chords = musical_piece.download_midi_music()
+	# print(grades_chords)
 
 
 
