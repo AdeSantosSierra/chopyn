@@ -20,6 +20,10 @@ logger = logging.getLogger(__name__)
 logger.setLevel('INFO')
 
 import sys
+
+import os
+import urllib2
+
 # import folders with the code
 # At the moment, there is not other way of importing 
 
@@ -133,7 +137,6 @@ class Read(Score):
 		      .head(1)['name_note'][0]
 		      )
 
-
 	def get_tonality(self):
 		tonalities = \
 					 ({'Do':['Do','Re','Mi','Fa','Sol','La','Si'],
@@ -207,11 +210,6 @@ class Read(Score):
 			common_notes = list(set(tonic_scale_notes) & set(all_notes))
 
 		missing_notes_in_scale = list(set(tonic_scale_notes) - set(common_notes))
-		
-		print('all_notes: '+str(all_notes))
-		print('tonic_scale_notes: '+str(tonic_scale_notes))
-		print('common_notes: '+str(common_notes))
-		print('missing_notes_in_scale: '+str(missing_notes_in_scale))
 
 		# Convert notes in music to the closest in tonic scale
 		renamed_missing_notes = \
@@ -252,6 +250,7 @@ class Read(Score):
 			              .index(chord_element[:-1])]+chord_element[-1]
 			              if chord_element[:-1] in tonic_scale_notes 
 			              else self._apply_tonality_to_altered_notes(chord_element, tonic_scale_notes)
+			              # else 'X'
 			              for chord_element in tuple_x
 			              ])))
 		else:
@@ -447,16 +446,31 @@ class Read(Score):
 			for note in chord:
 				if note != 'X':
 					# Extract octave
-					octave = int(note[-1])
-					note_name = note[:-1]
-					converted_note = tonality_scale[grade_mapping[note_name]]
-					if converted_note[-1] == 'b' or converted_note[-1] == '#':
-						alteration = converted_note[-1]
-						name_note  = converted_note[:-1]
-					else:
-						alteration = ''
-						name_note  = converted_note
+					if note[-1] != '+':
+						octave = int(note[-1])
+						note_name = note[:-1]
+						converted_note = tonality_scale[grade_mapping[note_name]]
+						if converted_note[-1] == 'b' or converted_note[-1] == '#':
+							alteration = converted_note[-1]
+							name_note  = converted_note[:-1]
+						else:
+							alteration = ''
+							name_note  = converted_note
 
+					else:
+						# Here, we have VI4+, II5+, ...
+						octave = int(note[-2])
+						note_name = note[:-2]
+						converted_note = tonality_scale[grade_mapping[note_name]]
+
+						if converted_note[-1] == 'b':
+							alteration = ''
+							name_note  = converted_note[:-1]
+						else:
+							alteration = '#'
+							name_note  = converted_note
+
+						print([octave, note_name, name_note])
 				else:
 					# In case of X, then use tonic
 					converted_note = tonic
@@ -481,7 +495,240 @@ class Read(Score):
 				
 		return notes_sequence
 
+	def download_midi_music(self):
+		# Based on the work done by
+		# Written by Olof Mogren, http://mogren.one/
 		
+		ignore_patterns                      = ['xoom']
+		sources                              = {}
+		sources['classical']                 = {}
+		sources['classical']['alkan']        = ['http://www.classicalmidi.co.uk/alkan.htm']
+		sources['classical']['aguado']       = ['http://www.classicalmidi.co.uk/aguadodion.htm']	
+		sources['classical']['adam']         = ['http://www.classicalmidi.co.uk/adam.htm']
+		sources['classical']['albenizisaac'] = ['http://www.classicalmidi.co.uk/albeniz.htm']
+		sources['classical']['albenizmateo'] = ['http://www.classicalmidi.co.uk/albenizmateo.htm']
+		sources['classical']['albinoni']     = ['http://www.classicalmidi.co.uk/albinoni.htm']
+		sources['classical']['alford']       = ['http://www.classicalmidi.co.uk/alford.htm']
+		sources['classical']['anderson']     = ['http://www.classicalmidi.co.uk/anderson.htm']
+		sources['classical']['ansell']       = ['http://www.classicalmidi.co.uk/anselljohn.htm']
+		sources['classical']['arensky']      = ['http://www.classicalmidi.co.uk/arensky.htm']
+		sources['classical']['arriaga']      = ['http://www.classicalmidi.co.uk/arriag.htm']
+		sources['classical']['bach']         = ['http://www.midiworld.com/bach.htm','http://www.classicalmidi.co.uk/bach.htm']
+		sources['classical']['bartok']       = ['http://www.midiworld.com/bartok.htm','http://www.classicalmidi.co.uk/bartok.htm']
+		sources['classical']['barber']       = ['http://www.classicalmidi.co.uk/barber.htm']
+		sources['classical']['barbieri']     = ['http://www.classicalmidi.co.uk/barbie.htm']
+		sources['classical']['bax']          = ['http://www.classicalmidi.co.uk/bax.htm']
+		sources['classical']['beethoven']    = ['http://www.midiworld.com/beethoven.htm','http://www.classicalmidi.co.uk/beethoven.htm']
+		sources['classical']['bellini']      = ['http://www.classicalmidi.co.uk/bellini.htm']
+		sources['classical']['berlin']       = ['http://www.classicalmidi.co.uk/berlin.htm']
+		sources['classical']['berlioz']      = ['http://www.classicalmidi.co.uk/berlioz.htm']
+		sources['classical']['binge']        = ['http://www.classicalmidi.co.uk/binge.htm']
+		sources['classical']['bizet']        = ['http://www.classicalmidi.co.uk/bizet.htm']
+		sources['classical']['boccherini']   = ['http://www.classicalmidi.co.uk/bocc.htm']
+		sources['classical']['boellman']     = ['http://www.classicalmidi.co.uk/boell.htm']
+		sources['classical']['borodin']      = ['http://www.classicalmidi.co.uk/borodin.htm']
+		sources['classical']['boyce']        = ['http://www.classicalmidi.co.uk/boyce.htm']
+		sources['classical']['brahms']       = ['http://www.midiworld.com/brahms.htm','http://www.classicalmidi.co.uk/brahms.htm']
+		sources['classical']['breton']       = ['http://www.classicalmidi.co.uk/breton.htm']
+		sources['classical']['britten']      = ['http://www.classicalmidi.co.uk/britten.htm']
+		sources['classical']['bouwer']       = ['http://www.classicalmidi.co.uk/bouwer.htm']
+		sources['classical']['bruch']        = ['http://www.classicalmidi.co.uk/bruch.htm']
+		sources['classical']['bruckner']     = ['http://www.classicalmidi.co.uk/bruck.htm']
+		sources['classical']['bergmuller']   = ['http://www.classicalmidi.co.uk/bergmuller.htm']
+		sources['classical']['busoni']       = ['http://www.classicalmidi.co.uk/busoni.htm']
+		sources['classical']['byrd']         = ['http://www.midiworld.com/byrd.htm','http://www.classicalmidi.co.uk/byrd.htm']
+		sources['classical']['carulli']      = ['http://www.classicalmidi.co.uk/carull.htm']
+		sources['classical']['chabrier']     = ['http://www.classicalmidi.co.uk/chabrier.htm']
+		sources['classical']['chaminade']    = ['http://www.classicalmidi.co.uk/chaminad.htm']
+		sources['classical']['chapi']        = ['http://www.classicalmidi.co.uk/chapie.htm']
+		sources['classical']['cherubini']    = ['http://www.classicalmidi.co.uk/cherub.htm']
+		sources['classical']['chopin']       = ['http://www.midiworld.com/chopin.htm','http://www.classicalmidi.co.uk/chopin.htm']
+		sources['classical']['clementi']     = ['http://www.classicalmidi.co.uk/clemen.htm']
+		sources['classical']['coates']       = ['http://www.classicalmidi.co.uk/coates.htm']
+		sources['classical']['copland']      = ['http://www.classicalmidi.co.uk/copland.htm']
+		sources['classical']['corelli']      = ['http://www.classicalmidi.co.uk/cor.htm']
+		sources['classical']['cramer']       = ['http://www.classicalmidi.co.uk/cramer.htm']
+		sources['classical']['curzon']       = ['http://www.classicalmidi.co.uk/cuzon.htm']
+		sources['classical']['czerny']       = ['http://www.classicalmidi.co.uk/czerny.htm']
+		sources['classical']['debussy']      = ['http://www.classicalmidi.co.uk/debussy.htm']
+		sources['classical']['delibes']      = ['http://www.classicalmidi.co.uk/del.htm']
+		sources['classical']['delius']       = ['http://www.classicalmidi.co.uk/delius.htm']
+		sources['classical']['dialoc']       = ['http://www.classicalmidi.co.uk/diaoc.htm']
+		sources['classical']['dupre']        = ['http://www.classicalmidi.co.uk/dupre.htm']
+		sources['classical']['dussek']       = ['http://www.classicalmidi.co.uk/dussek.htm']
+		# sources['classical']['dvorak']       = ['http://www.classicalmidi.co.uk/dvok.htm']
+		sources['classical']['elgar']        = ['http://www.classicalmidi.co.uk/elgar.htm']
+		sources['classical']['eshpai']       = ['http://www.classicalmidi.co.uk/Eshpai.htm', 'http://www.classicalmidi.co.uk/Eshpai%20.htm']
+		sources['classical']['faure']        = ['http://www.classicalmidi.co.uk/faure.htm']
+		sources['classical']['field']        = ['http://www.classicalmidi.co.uk/field.htm']
+		sources['classical']['flotow']       = ['http://www.classicalmidi.co.uk/flotow.htm']
+		sources['classical']['foster']       = ['http://www.classicalmidi.co.uk/foster.htm']
+		sources['classical']['franck']       = ['http://www.classicalmidi.co.uk/franck.htm']
+		sources['classical']['fresc']        = ['http://www.classicalmidi.co.uk/fresc.htm']
+		sources['classical']['garoto']       = ['http://www.classicalmidi.co.uk/garoto.htm']
+		sources['classical']['german']       = ['http://www.classicalmidi.co.uk/german.htm']
+		sources['classical']['gershwin']     = ['http://www.classicalmidi.co.uk/gershwin.htm']
+		sources['classical']['gilbert']      = ['http://www.classicalmidi.co.uk/gilbert.htm']
+		# sources['classical']['ginast']       = ['http://www.classicalmidi.co.uk/ginast.htm']
+		sources['classical']['gott']         = ['http://www.classicalmidi.co.uk/gott.htm']
+		sources['classical']['gounod']       = ['http://www.classicalmidi.co.uk/gounod.htm']
+		sources['classical']['grain']        = ['http://www.classicalmidi.co.uk/grain.htm']
+		sources['classical']['grieg']        = ['http://www.classicalmidi.co.uk/grieg.htm']
+		sources['classical']['griff']        = ['http://www.classicalmidi.co.uk/griff.htm']
+		sources['classical']['haydn']        = ['http://www.midiworld.com/haydn.htm','http://www.classicalmidi.co.uk/haydn.htm']
+		sources['classical']['handel']       = ['http://www.midiworld.com/handel.htm','http://www.classicalmidi.co.uk/handel.htm']
+		sources['classical']['heller']       = ['http://www.classicalmidi.co.uk/heller.htm']
+		sources['classical']['herold']       = ['http://www.classicalmidi.co.uk/herold.htm']
+		sources['classical']['hiller']       = ['http://www.classicalmidi.co.uk/hiller.htm']
+		sources['classical']['holst']        = ['http://www.classicalmidi.co.uk/holst.htm']
+		sources['classical']['hummel']       = ['http://www.midiworld.com/hummel.htm','http://www.classicalmidi.co.uk/hummel.htm']
+		sources['classical']['ibert']        = ['http://www.classicalmidi.co.uk/ibert.htm']
+		sources['classical']['ives']         = ['http://www.classicalmidi.co.uk/ives.htm']
+		sources['classical']['janacek']      = ['http://www.classicalmidi.co.uk/janacek.htm']
+		sources['classical']['joplin']       = ['http://www.classicalmidi.co.uk/joplin.htm']
+		sources['classical']['jstrauss']     = ['http://www.classicalmidi.co.uk/jstrauss.htm']
+		sources['classical']['karg']         = ['http://www.classicalmidi.co.uk/karl.htm']
+		sources['classical']['khach']        = ['http://www.classicalmidi.co.uk/khach.htm']
+		sources['classical']['kuhlau']       = ['http://www.classicalmidi.co.uk/kuhlau.htm']
+		sources['classical']['lalo']         = ['http://www.classicalmidi.co.uk/lalo.htm']
+		sources['classical']['lemire']       = ['http://www.classicalmidi.co.uk/lemire.htm']
+		sources['classical']['lenar']        = ['http://www.classicalmidi.co.uk/lenar.htm']
+		sources['classical']['liszt']        = ['http://www.midiworld.com/liszt.htm','http://www.classicalmidi.co.uk/liszt.htm']
+		sources['classical']['lobos']        = ['http://www.classicalmidi.co.uk/lobos.htm']
+		sources['classical']['lovland']      = ['http://www.classicalmidi.co.uk/lovland.htm']
+		sources['classical']['lyssen']       = ['http://www.classicalmidi.co.uk/lyssen.htm']
+		sources['classical']['maccunn']      = ['http://www.classicalmidi.co.uk/maccunn.htm']
+		sources['classical']['mahler']       = ['http://www.classicalmidi.co.uk/mahler.htm']
+		sources['classical']['maier']        = ['http://www.classicalmidi.co.uk/maier.htm']
+		sources['classical']['marcello']     = ['http://www.classicalmidi.co.uk/marcello.htm']
+		sources['classical']['martini']      = ['http://www.classicalmidi.co.uk/martini.htm']
+		sources['classical']['mehul']        = ['http://www.classicalmidi.co.uk/mehul.htm']
+		sources['classical']['mendelssohn']  = ['http://www.midiworld.com/mendelssohn.htm']
+		sources['classical']['messager']     = ['http://www.classicalmidi.co.uk/messager.htm']
+		sources['classical']['messia']       = ['http://www.classicalmidi.co.uk/messia.htm']
+		sources['classical']['meyerbeer']    = ['http://www.classicalmidi.co.uk/meyerbeer.htm']
+		sources['classical']['modest']       = ['http://www.classicalmidi.co.uk/modest.htm']
+		sources['classical']['moszkowski']   = ['http://www.classicalmidi.co.uk/moszk.htm']
+		sources['classical']['mozart']       = ['http://www.midiworld.com/mozart.htm','http://www.classicalmidi.co.uk/mozart.htm']
+		sources['classical']['nikolaievich'] = ['http://www.classicalmidi.co.uk/scab.htm']
+		sources['classical']['orff']         = ['http://www.classicalmidi.co.uk/orff.htm']
+		sources['classical']['pachelbel']    = ['http://www.classicalmidi.co.uk/pach.htm']
+		sources['classical']['paderewski']   = ['http://www.classicalmidi.co.uk/paderewski.htm']
+		sources['classical']['pagg']         = ['http://www.classicalmidi.co.uk/pagg.htm']
+		sources['classical']['palestrina']   = ['http://www.classicalmidi.co.uk/palestrina.htm']
+		sources['classical']['paradisi']     = ['http://www.classicalmidi.co.uk/paradisi.htm']
+		sources['classical']['poulenc']      = ['http://www.classicalmidi.co.uk/poulenc.htm']
+		sources['classical']['pres']         = ['http://www.classicalmidi.co.uk/pres.htm']
+		sources['classical']['prokif']       = ['http://www.classicalmidi.co.uk/prokif.htm']
+		sources['classical']['puccini']      = ['http://www.classicalmidi.co.uk/puccini.htm']
+		sources['classical']['rachmaninov']  = ['http://www.midiworld.com/rachmaninov.htm','http://www.classicalmidi.co.uk/rach.htm']
+		sources['classical']['ravel']        = ['http://www.classicalmidi.co.uk/ravel1.htm']
+		# sources['classical']['respig']       = ['http://www.classicalmidi.co.uk/respig.htm']
+		sources['classical']['rimsky']       = ['http://www.classicalmidi.co.uk/rimsky.htm']
+		sources['classical']['rossini']      = ['http://www.classicalmidi.co.uk/rossini.htm']
+		sources['classical']['strauss']     = ['http://www.classicalmidi.co.uk/rstrauss.htm']
+		sources['classical']['sacrlatt']     = ['http://www.classicalmidi.co.uk/sacrlatt.htm']
+		sources['classical']['saens']        = ['http://www.classicalmidi.co.uk/saens.htm']
+		sources['classical']['sanz']         = ['http://www.classicalmidi.co.uk/sanz.htm']
+		sources['classical']['satie']        = ['http://www.classicalmidi.co.uk/satie.htm']
+		sources['classical']['scarlatti']    = ['http://www.midiworld.com/scarlatti.htm','http://www.classicalmidi.co.uk/scarlatt.htm']
+		sources['classical']['schoberg']     = ['http://www.classicalmidi.co.uk/schoberg.htm']
+		sources['classical']['schubert']     = ['http://www.classicalmidi.co.uk/schubert.htm']
+		sources['classical']['schumann']     = ['http://www.midiworld.com/schumann.htm', 'http://www.classicalmidi.co.uk/schuman.htm']
+		sources['classical']['scriabin']     = ['http://www.midiworld.com/scriabin.htm']
+		# sources['classical']['shostakovich'] = ['http://www.classicalmidi.co.uk/shost.htm']
+		sources['classical']['sibelius']     = ['http://www.classicalmidi.co.uk/sibelius.htm']
+		sources['classical']['soler']        = ['http://www.classicalmidi.co.uk/soler.htm']
+		sources['classical']['sor']          = ['http://www.classicalmidi.co.uk/sor.htm']
+		sources['classical']['sousa']        = ['http://www.classicalmidi.co.uk/sousa.htm']
+		sources['classical']['stravinsky']   = ['http://www.classicalmidi.co.uk/strav.htm']
+		sources['classical']['sullivan']     = ['http://www.classicalmidi.co.uk/sull.htm']
+		sources['classical']['susato']       = ['http://www.classicalmidi.co.uk/susato.htm']
+		sources['classical']['taylor']       = ['http://www.classicalmidi.co.uk/taylor.htm']
+		sources['classical']['tchaikovsky']  = ['http://www.midiworld.com/tchaikovsky.htm','http://www.classicalmidi.co.uk/tch.htm']
+		sources['classical']['thomas']       = ['http://www.classicalmidi.co.uk/thomas.htm']
+		sources['classical']['vaughan']      = ['http://www.classicalmidi.co.uk/vaughan.htm']
+		sources['classical']['verdi']        = ['http://www.classicalmidi.co.uk/verdi.htm']
+		sources['classical']['vivaldi']      = ['http://www.classicalmidi.co.uk/vivaldi.htm']
+		sources['classical']['wagner']       = ['http://www.classicalmidi.co.uk/wagner.htm']
+		sources['classical']['walton']       = ['http://www.classicalmidi.co.uk/walton.htm']
+		sources['classical']['wyschnegradsky'] = ['http://www.classicalmidi.co.uk/Wyschnegradsky.htm']
+		sources['classical']['yradier']      = ['http://www.classicalmidi.co.uk/yradier.htm']
+
+
+		midi_files = {}
+		datadir = '/Users/adesant3/Documents/Kindergarten/chopyn/data/'
+
+
+		import urlparse, urllib2, os, math, random, re, string, sys
+
+		# if os.path.exists(os.path.join(datadir, 'do-not-redownload.txt')):
+		# 	print 'Already completely downloaded, delete do-not-redownload.txt to check for files to download.'
+		# 	return
+		for genre in sources:
+			midi_files[genre] = {}
+			for composer in sources[genre]:
+				midi_files[genre][composer] = []
+				print('---------------'+composer+'--------------')
+				for url in sources[genre][composer]:
+					try:
+						print('**************'+url+'**************')
+						response = urllib2.urlopen(url)
+						#if 'classicalmidi' in url:
+						#  headers = response.info()
+						#  print headers
+						data = response.read()
+
+						#htmlinks = re.findall('"(  ?[^"]+\.htm)"', data)
+						#for link in htmlinks:
+						#  print 'http://www.classicalmidi.co.uk/'+strip(link)
+
+						# make urls absolute:
+						urlparsed = urlparse.urlparse(url)
+						data = re.sub('href="\/', 'href="http://'+urlparsed.hostname+'/', data, flags= re.IGNORECASE)
+						data = re.sub('href="(?!http:)', 'href="http://'+urlparsed.hostname+urlparsed.path[:urlparsed.path.rfind('/')]+'/', data, flags= re.IGNORECASE)
+						#if 'classicalmidi' in url:
+						#  print data
+						
+						links = re.findall('"(http://[^"]+\.mid)"', data)
+						for link in links:
+							cont = False
+							for p in ignore_patterns:
+								if p in link:
+									print 'Not downloading links with {}'.format(p)
+									cont = True
+									continue
+							if cont: continue
+							# print link
+							filename = link.split('/')[-1]
+							valid_chars = "-_.()%s%s" % (string.ascii_letters, string.digits)
+							filename = ''.join(c for c in filename if c in valid_chars)
+							#print genre+'/'+composer+'/'+filename
+							midi_files[genre][composer].append(filename)
+							localdir = os.path.join(os.path.join(datadir, genre), composer)
+							localpath = os.path.join(localdir, filename)
+							if os.path.exists(localpath):
+								print 'File exists. Not redownloading: {}'.format(localpath)
+							else:
+								try:
+									response_midi = urllib2.urlopen(link)
+									try: os.makedirs(localdir)
+									except: pass
+									data_midi = response_midi.read()
+									if 'DOCTYPE html PUBLIC' in data_midi:
+										print 'Seems to have been served an html page instead of a midi file. Continuing with next file.'
+									elif 'RIFF' in data_midi[0:9]:
+										print 'Seems to have been served an RIFF file instead of a midi file. Continuing with next file.'
+									else:
+										with open(localpath, 'w') as f:
+											f.write(data_midi)
+								except:
+									print 'Failed to fetch {}'.format(link)
+					except:
+						print('The composer '+composer+' is not available')
+		with open(os.path.join(datadir, 'do-not-redownload.txt'), 'w') as f:
+			f.write('This directory is considered completely downloaded.')
+
 def _get_note_name_without_octave(fullNoteOctave):
 	# Function to get the name, regardless the octave
 
@@ -532,7 +779,7 @@ if __name__ == "__main__":
 	musical_piece = Read(name_file_midi)
 	# print(chopin.get_music_data().head())
 	#print(chopin.get_chord_from_tick().filter(['fullNoteOctave']))
-	print('La tonalidad es: '+musical_piece.get_tonality())
+	# print('La tonalidad es: '+musical_piece.get_tonality())
 	# grades_chords = chopin.apply_tonality()
 	# grades_chords.to_csv('../tmp/'+name_file_midi[13:-4]+'_grades_chords.csv',
 	#                      header=True,
@@ -540,7 +787,7 @@ if __name__ == "__main__":
 
 	# print(grades_chords)
 
-	grades_chords = musical_piece.apply_tonality()
+	grades_chords = musical_piece.download_midi_music()
 	print(grades_chords)
 
 

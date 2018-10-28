@@ -18,7 +18,7 @@ class Polyphony (object):
 		individual_notes = list()
 		chord_id = list()
 
-		duration_length = 125
+		duration_length = 400
 		factor_duration = 2
 
 		for id_iter_chord, iter_chord in enumerate(self.sequenceChord):
