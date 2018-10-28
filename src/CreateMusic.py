@@ -344,15 +344,12 @@ class CreateMusic(object):
 			                                )
 
 		logger.info('Create Music!!')
-		print(dir_name_model+'/'+name_model+'-'+str(training_iters)+'.meta')
 		music_creation = \
 		music_creator.load_and_predict(dir_name_model,
 		                               dir_name_model+'/'+name_model+'-'+str(model_version_to_load)+'.meta',
 		                               initial_sequence_chords,
 		                               sequence_length = sequence_length
 		                               )
-
-		print(music_creation)
 
 		logger.info('Convert grades to sequences')
 		chords_notes = (musical_piece
