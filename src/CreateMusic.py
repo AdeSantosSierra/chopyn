@@ -289,6 +289,93 @@ class CreateMusicFromChords(object):
 	    return pred
 
 
+class CreateMusic(object):
+
+	def __init__(self, name_file_midi, 
+	             n_input = 20, 
+	             training_iters = 100000, 
+	             sequence_length = 500, 
+	             model_version_to_load = 99000, 
+	             bool_train = False):
+
+		musical_piece = Read(name_file_midi)
+
+		print('La tonalidad es: '+musical_piece.get_tonality())
+
+		logger.info('Calculate the tonality and apply it to the whole music piece')
+		grades_chords = musical_piece.apply_tonality()
+
+		logger.info('Extract the sequence of chords')
+
+
+		name_model = 'n_input_'+str(n_input)+'_chromatic'+'_iters_'+str(training_iters)+'_'+name_file_midi[13:-4]
+		dir_name_model = '../models/'+name_model
+
+		if not os.path.exists(dir_name_model):
+		    os.makedirs(dir_name_model)
+
+
+		logger.info('Create the Deep Learning object')
+		music_creator = CreateMusicFromChords(grades_chords,
+		                                      training_iters = training_iters,
+		                                      n_input = n_input
+		                                      )	
+
+		
+		if bool_train:
+			logger.info('Config LSTM')
+			optimizer, accuracy, cost, pred = music_creator.config_LSTM()
+
+
+		logger.info('Estimate initial sequence to predict based on LSTM')
+		grades_chords_values = grades_chords['grades']
+		initial_point = random.randint(0,len(grades_chords_values)-n_input-1)
+		initial_sequence_chords = list(grades_chords_values
+		                               [initial_point:(initial_point+n_input)
+		                               ]
+		                               )
+
+		if bool_train:
+			logger.info('Train and save LSTM')
+			music_creation = \
+			music_creator.train(optimizer, accuracy, cost, pred, dir_name_model+'/'+name_model,
+			                                #sequence_length = sequence_length,
+			                                #starting_sequence = initial_sequence_chords
+			                                )
+
+		logger.info('Create Music!!')
+		print(dir_name_model+'/'+name_model+'-'+str(training_iters)+'.meta')
+		music_creation = \
+		music_creator.load_and_predict(dir_name_model,
+		                               dir_name_model+'/'+name_model+'-'+str(model_version_to_load)+'.meta',
+		                               initial_sequence_chords,
+		                               sequence_length = sequence_length
+		                               )
+
+		print(music_creation)
+
+		logger.info('Convert grades to sequences')
+		chords_notes = (musical_piece
+		                .convert_grades_sequence_to_notes(music_creation,
+		                                                  musical_piece.get_tonality()
+		                                                  )
+		                )
+
+
+		logger.info('Convert it to MIDI')
+		polyphony = SequenceChordPolyphony(chords_notes)
+		CSVtoMIDI(polyphony
+		          .convert_to_midi(),
+		          'polyphony_'+name_file_midi[13:-4]
+		          )
+
+		logger.info('Finished!!!')
+
+
+
+
+
+
 if __name__ == '__main__':
 
 	# python ../../Data\ Beers/src/midicsv-process.py Gymnopedie_No_1.midi > Gymnopedie_No_1.csv
@@ -308,79 +395,9 @@ if __name__ == '__main__':
 	#name_file_midi = '../../scores/Beethoven_Moonlight_Sonata_third_movement.csv'
 	#name_file_midi = '../../scores/Schubert_Piano_Trio_2nd_Movement.csv'
 	
-	musical_piece = Read(name_file_midi)
-	n_input = 20
-	training_iters = 100000
-	sequence_length = 500
-	bool_train = False
-
-	print('La tonalidad es: '+musical_piece.get_tonality())
-
-	logger.info('Calculate the tonality and apply it to the whole music piece')
-	grades_chords = musical_piece.apply_tonality()
-
-	logger.info('Extract the sequence of chords')
-
-
-	name_model = 'n_input_'+str(n_input)+'_chromatic'+'_iters_'+str(training_iters)+'_'+name_file_midi[13:-4]
-	dir_name_model = '../models/'+name_model
-
-	if not os.path.exists(dir_name_model):
-	    os.makedirs(dir_name_model)
-
-
-	logger.info('Create the Deep Learning object')
-	music_creator = CreateMusicFromChords(grades_chords,
-	                                      training_iters = training_iters,
-	                                      n_input = n_input
-	                                      )	
-
-	
-	if bool_train:
-		logger.info('Config LSTM')
-		optimizer, accuracy, cost, pred = music_creator.config_LSTM()
-
-
-	logger.info('Estimate initial sequence to predict based on LSTM')
-	grades_chords_values = grades_chords['grades']
-	initial_point = random.randint(0,len(grades_chords_values)-n_input-1)
-	initial_sequence_chords = list(grades_chords_values
-	                               [initial_point:(initial_point+n_input)
-	                               ]
-	                               )
-
-	if bool_train:
-		logger.info('Train and save LSTM')
-		music_creation = \
-		music_creator.train(optimizer, accuracy, cost, pred, dir_name_model+'/'+name_model,
-		                                #sequence_length = sequence_length,
-		                                #starting_sequence = initial_sequence_chords
-		                                )
-
-	logger.info('Create Music!!')
-	print(dir_name_model+'/'+name_model+'-'+str(training_iters)+'.meta')
-	music_creation = \
-	music_creator.load_and_predict(dir_name_model,
-	                               dir_name_model+'/'+name_model+'-'+str(99000)+'.meta',
-	                               initial_sequence_chords,
-	                               sequence_length = sequence_length
-	                               )
-
-	print(music_creation)
-
-	logger.info('Convert grades to sequences')
-	chords_notes = (musical_piece
-	                .convert_grades_sequence_to_notes(music_creation,
-	                                                  musical_piece.get_tonality()
-	                                                  )
-	                )
-
-
-	logger.info('Convert it to MIDI')
-	polyphony = SequenceChordPolyphony(chords_notes)
-	CSVtoMIDI(polyphony
-	          .convert_to_midi(),
-	          'polyphony_'+name_file_midi[13:-4]
-	          )
-
-	logger.info('Finished!!!')
+	CreateMusic(name_file_midi, 
+	            n_input = 20, 
+	            training_iters = 100000, 
+	            sequence_length = 500, 
+	            model_version_to_load = 99000, 
+	            bool_train = False)
