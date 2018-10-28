@@ -291,27 +291,26 @@ class CreateMusicFromChords(object):
 
 if __name__ == '__main__':
 
-	# python ../../Data\ Beers/src/midicsv-process.py Gymnopedie_No_1.midi > Gymnopedie_No_1.csv
+
 	name_file_midi = '../../scores/Schubert_S560_Schwanengesang_no7.csv'
 	name_file_midi = '../../scores/Brahms_symphony_2_2.csv' # Si M
+	name_file_midi = '../../scores/Bach-Partita_No1_in_Bb_BWV825_7Gigue.csv'
 	name_file_midi = '../../scores/Albeniz_Asturias.csv' # Doesn't detect properly 
+	name_file_midi = '../../scores/Bach_Cello_Suite_No_1.csv'
 	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_5.csv'
 	name_file_midi = '../../scores/Schuber_Impromptu_D_899_No_3.csv'
+	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
 	name_file_midi = '../../scores/Mozart_Rondo.csv'
+	name_file_midi = '../../scores/Brahms_symphony_2_1.csv'
 	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_1.csv'
 	name_file_midi = '../../scores/Mozart_Sonata_16.csv'
-	name_file_midi = '../../scores/Bach-Partita_No1_in_Bb_BWV825_7Gigue.csv'
-	name_file_midi = '../../scores/Brahms_symphony_2_1.csv'
-	name_file_midi = '../../scores/Bach_Cello_Suite_No_1.csv'
-	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
-	name_file_midi = '../../scores/Gymnopedie_No_1.csv'
 	#name_file_midi = '../../scores/Beethoven_Moonlight_Sonata_third_movement.csv'
 	#name_file_midi = '../../scores/Schubert_Piano_Trio_2nd_Movement.csv'
 	
 	musical_piece = Read(name_file_midi)
 	n_input = 20
 	training_iters = 100000
-	sequence_length = 500
+	sequence_length = 100
 	bool_train = False
 
 	print('La tonalidad es: '+musical_piece.get_tonality())
@@ -322,7 +321,7 @@ if __name__ == '__main__':
 	logger.info('Extract the sequence of chords')
 
 
-	name_model = 'n_input_'+str(n_input)+'_chromatic'+'_iters_'+str(training_iters)+'_'+name_file_midi[13:-4]
+	name_model = 'n_input_'+str(n_input)+'_iters_'+str(training_iters)+'_'+name_file_midi[13:-4]
 	dir_name_model = '../models/'+name_model
 
 	if not os.path.exists(dir_name_model):
@@ -361,14 +360,12 @@ if __name__ == '__main__':
 	print(dir_name_model+'/'+name_model+'-'+str(training_iters)+'.meta')
 	music_creation = \
 	music_creator.load_and_predict(dir_name_model,
-	                               dir_name_model+'/'+name_model+'-'+str(99000)+'.meta',
+	                               dir_name_model+'/'+name_model+'-'+str(35000)+'.meta',
 	                               initial_sequence_chords,
 	                               sequence_length = sequence_length
 	                               )
 
-	print(music_creation)
-
-	logger.info('Convert grades to sequences')
+	logger.info('Convert it to MIDI')
 	chords_notes = (musical_piece
 	                .convert_grades_sequence_to_notes(music_creation,
 	                                                  musical_piece.get_tonality()
@@ -376,7 +373,6 @@ if __name__ == '__main__':
 	                )
 
 
-	logger.info('Convert it to MIDI')
 	polyphony = SequenceChordPolyphony(chords_notes)
 	CSVtoMIDI(polyphony
 	          .convert_to_midi(),
