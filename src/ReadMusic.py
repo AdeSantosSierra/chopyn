@@ -160,27 +160,33 @@ class Read(Score):
 		               'Sib':['Do','Re','Re#','Fa','Sol','La','La#'],
 		              })
 
+		# The music is stored in self.music_df
 		note_histogram = \
-			(self
-		      .music_df
-		      # Group by name of the note (A, F#, ...)
-		      .groupby(['name_note'])
-		      # Take the total length that note has been played
-		      .agg({'dur_ms':sum})
-		      .rename(columns={'dur_ms': 'cum_duration'})
-		      # Order in descending manner
-		      .sort_values(['cum_duration'],ascending=False)
-		      .reset_index()
-		      # Take the first element and the corresponding column
-		      #.head(10)['name_note'][0:10]
-		      ).set_index('name_note')['cum_duration'].to_dict()
+		(self.music_df
+      	# Group by name of the note
+      	.groupby(['name_note'])
+      	# Take the total amount of time that every note has been played
+      	# Do#, Re#, Fa#, La#, Fa, Sol# -> Reb
+      	.agg({'dur_ms':sum})
+      	.rename(columns = {'dur_ms': 'cum_duration'})
+      	# Order in descending manner
+      	.sort_values(['cum_duration'], ascending = False)
+      	.reset_index()
+      	).set_index('name_note')['cum_duration'].to_dict()
 
+
+      	# Join of note_histogram to tonalities
 		tonality_candidates = {}
+      	# (1) Join note_histogram to tonalties
+      	# (2) Calculate the total amount of time the intersection sounds
+      	# (3) Take the argmax
 		for tonality_name, tonality_scale in tonalities.iteritems():
-			tonality_candidates[tonality_name] = np.sum([note_histogram.get(iter_tonality_scale,0) 
-			                                            for iter_tonality_scale in tonality_scale])
+			tonality_candidates[tonality_name] = np.sum([note_histogram.get(iter_tonality_scale, 0) 
+			                                            for iter_tonality_scale in tonality_scale
+			                                            ])
 
-		return next(iter(OrderedDict(sorted(tonality_candidates.items(), key=lambda t: -t[1]))))	
+		return next(iter(OrderedDict(sorted(tonality_candidates.items(), key=lambda t: -t[1]))))
+			
 
 	def apply_tonality(self):
 
@@ -796,29 +802,19 @@ if __name__ == "__main__":
 	name_file_midi = '../../scores/Brahms_symphony_2_2.csv' # Si M
 	name_file_midi = '../../scores/Albeniz_Asturias.csv'
 	name_file_midi = '../../scores/Schuber_Impromptu_D_899_No_3.csv'
-	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_1.csv'
 	name_file_midi = '../../scores/Bach-Partita_No1_in_Bb_BWV825_7Gigue.csv'
 	name_file_midi = '../../scores/Mozart_Sonata_16.csv'
 	name_file_midi = '../../scores/Bach_Cello_Suite_No_1.csv'
-	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_5.csv'
 	name_file_midi = '../../scores/Brahms_symphony_2_1.csv'
 	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
+	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_1.csv'
+	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_5.csv'
 	#name_file_midi = '../../scores/Beethoven_Moonlight_Sonata_third_movement.csv'
 	#name_file_midi = '../../scores/Schubert_Piano_Trio_2nd_Movement.csv'
 	
 	musical_piece = Read(name_file_midi)
-	# print(chopin.get_music_data().head())
-	#print(chopin.get_chord_from_tick().filter(['fullNoteOctave']))
-	# print('La tonalidad es: '+musical_piece.get_tonality())
-	# grades_chords = chopin.apply_tonality()
-	# grades_chords.to_csv('../tmp/'+name_file_midi[13:-4]+'_grades_chords.csv',
-	#                      header=True,
-	#                      index_label=None)
+	print(musical_piece.get_tonality())
 
-	print(musical_piece.convert_tonality_to_music_dataframe())
-
-	# grades_chords = musical_piece.download_midi_music()
-	# print(grades_chords)
 
 
 

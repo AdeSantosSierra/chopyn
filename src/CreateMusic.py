@@ -390,19 +390,19 @@ class CreateMusicFromDataframe(object):
 
 		# tf Graph input
 		self.x = tf.placeholder(tf.float32, 
-		                        shape=(self.n_input, self.num_columns_training_data), 
+		                        shape=(None, self.num_columns_training_data), 
 		                        name = 'x')
 		self.y = tf.placeholder(tf.float32, 
-		                        shape=(self.num_columns_training_data, 1),
+		                        shape=(None, self.num_columns_training_data),
 		                        name = 'y'
 		                        )
 
 		# RNN output node weights and biases
 		weights = {
-		    'out': tf.Variable(tf.random_normal([n_hidden, 1]))
+		    'out': tf.Variable(tf.random_normal([self.num_columns_training_data, self.num_columns_training_data]))
 		}
 		biases = {
-		    'out': tf.Variable(tf.random_normal([self.num_columns_training_data, 1]))
+		    'out': tf.Variable(tf.random_normal([self.num_columns_training_data]))
 		}
 
 		pred = self.RNN(self.x, weights, biases, n_hidden)
