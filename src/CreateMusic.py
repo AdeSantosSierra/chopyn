@@ -369,7 +369,7 @@ class CreateMusicFromDataframe(object):
 	def __init__(self, music_data, training_iters, n_input):
 
 		self.training_iters = training_iters
-		self.display_step = 1000
+		self.display_step = 100
 		self.n_input = n_input
 
 		# Read musical data
@@ -515,10 +515,10 @@ class CreateMusicFromDataframe(object):
 		                  "{:.2f}%".format(100*acc_total/self.display_step))
 		            acc_total = 0
 		            loss_total = 0
-		            symbols_in = [self.training_data[i] for i in range(offset, offset + self.n_input)]
-		            symbols_out = self.training_data[offset + self.n_input]
-		            symbols_out_pred = reverse_dictionary[int(tf.argmax(onehot_pred, 1).eval())]
-		            print("%s - [%s] vs [%s]" % (symbols_in,symbols_out,symbols_out_pred))
+		            # symbols_in = [self.training_data[i] for i in range(offset, offset + self.n_input)]
+		            # symbols_out = self.training_data[offset + self.n_input]
+		            # symbols_out_pred = reverse_dictionary[int(tf.argmax(onehot_pred, 1).eval())]
+		            # print("%s - [%s] vs [%s]" % (symbols_in,symbols_out,symbols_out_pred))
 		            self.saver.save(session, name_model, global_step=step+1)
 		        step += 1
 		        offset += (self.n_input+1)
