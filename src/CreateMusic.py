@@ -399,7 +399,7 @@ class CreateMusicFromDataframe(object):
 
 		# RNN output node weights and biases
 		weights = {
-		    'out': tf.Variable(tf.random_normal([self.num_columns_training_data, self.num_columns_training_data]))
+		    'out': tf.Variable(tf.random_normal([n_hidden, self.num_columns_training_data]))
 		}
 		biases = {
 		    'out': tf.Variable(tf.random_normal([self.num_columns_training_data]))
@@ -408,42 +408,120 @@ class CreateMusicFromDataframe(object):
 		pred = self.RNN(self.x, weights, biases, n_hidden)
 
 		# Loss and optimizer
-		cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=pred, labels=self.y), name='cost')
+		cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=pred, 
+		                                                              labels=self.y), name='cost')
 		optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate).minimize(cost)
 
 		# Model evaluation
 		correct_pred = tf.equal(tf.argmax(pred,1), tf.argmax(self.y,1))
-		accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
-
+		accuracy     = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
+		
 		# Initializing the variables
-		self.init = tf.global_variables_initializer()
-		self.saver = tf.train.Saver()
+		self.init    = tf.global_variables_initializer()
+		self.saver   = tf.train.Saver()
 
 		return optimizer, accuracy, cost, pred
 
 	def RNN(self, x, weights, biases, n_hidden):
-	    
-	    # reshape to [1, n_input]
-	    x = tf.reshape(x, [-1, self.n_input])
+
+		# reshape to [1, n_input]
+		# -1 means to be inferred
+		# tensor 't' is [[[1, 1, 1],
+		#                 [2, 2, 2]],
+		#                [[3, 3, 3],
+		#                 [4, 4, 4]],
+		#                [[5, 5, 5],
+		#                 [6, 6, 6]]]
+		# tensor 't' has shape [3, 2, 3]
+
+		# -1 is inferred to be 2:
+		# reshape(t, [-1, 9]) ==> [[1, 1, 1, 2, 2, 2, 3, 3, 3],
+		#                          [4, 4, 4, 5, 5, 5, 6, 6, 6]]
+		
+		x = tf.reshape(x, [-1, self.num_columns_training_data])
 
 	    # Generate a n_input-element sequence of inputs
 	    # (eg. [had] [a] [general] -> [20] [6] [33])
-	    x = tf.split(x,self.n_input,1)
+	    # 0 means per n_input (horizontal dimension)
+		x = tf.split(x, self.n_input, 0)
+
+	    # # reshape to [1, n_input]
+	    # x = tf.reshape(x, [-1, self.n_input])
+
+	    # # Generate a n_input-element sequence of inputs
+	    # # (eg. [had] [a] [general] -> [20] [6] [33])
+	    # x = tf.split(x,self.n_input,1)
 
 	    # 2-layer LSTM, each layer has n_hidden units.
 	    # Average Accuracy= 95.20% at 50k iter
-	    rnn_cell = rnn.MultiRNNCell([rnn.BasicLSTMCell(n_hidden),
+		rnn_cell = rnn.MultiRNNCell([rnn.BasicLSTMCell(n_hidden),
 	                                rnn.BasicLSTMCell(n_hidden),
 	                                rnn.BasicLSTMCell(n_hidden)])
 
 	    # generate prediction
-	    outputs, states = rnn.static_rnn(rnn_cell, x, dtype=tf.float32)
+		outputs, states = rnn.static_rnn(rnn_cell, x, dtype=tf.float32)
 
 	    # there are n_input outputs but
 	    # we only want the last output
-	    pred = tf.matmul(outputs[-1], weights['out']) + biases['out']
-	    tf.identity(pred, 'pred')
-	    return pred
+		pred = tf.matmul(outputs[-1], weights['out']) + biases['out']
+		tf.identity(pred, 'pred')
+		return pred
+
+	def train(self, optimizer, accuracy, cost, pred, name_model):
+
+		# Launch the graph
+		with tf.Session() as session:
+		    session.run(self.init)
+		    self.saver.save(session, name_model)
+		    step = 0
+		    offset = random.randint(0,self.n_input+1)
+		    end_offset = self.n_input + 1
+		    acc_total = 0
+		    loss_total = 0
+
+		    # vocab_size = len(self.dictionary)
+
+		    # reverse_dictionary = dict(zip(self.dictionary.values(),
+		    #                               self.dictionary.keys()))
+
+		    self.writer.add_graph(session.graph)
+
+		    while step < self.training_iters:
+		        # Generate a minibatch. Add some randomness on selection process.
+		        if offset > (len(self.training_data)-end_offset):
+		            offset = random.randint(0, self.n_input+1)
+
+		        # symbols_in_keys = ([[self.dictionary[self.training_data[i]]] 
+		        #                    for i in range(offset, offset+self.n_input) ])
+		        # symbols_in_keys = np.reshape(np.array(symbols_in_keys), [-1, self.n_input, 1])
+
+		        # symbols_out_onehot = np.zeros([vocab_size], dtype=float)
+		        # symbols_out_onehot[self.dictionary[self.training_data[offset+self.n_input]]] = 1.0
+		        # symbols_out_onehot = np.reshape(symbols_out_onehot,[1,-1])
+
+		        input_x = self.training_data.loc[offset:(offset+self.n_input-1),:]
+		        input_y = self.training_data.loc[(offset+self.n_input-1),:].to_frame().T
+
+		        _, acc, loss, onehot_pred = session.run([optimizer, accuracy, cost, pred], \
+		                                                feed_dict={self.x: input_x, self.y: input_y})
+
+		        #print('pred')
+		        #print(pred)
+		        loss_total += loss
+		        acc_total += acc
+		        if (step+1) % self.display_step == 0:
+		            print("Iter= " + str(step+1) + ", Average Loss= " + \
+		                  "{:.6f}".format(loss_total/self.display_step) + ", Average Accuracy= " + \
+		                  "{:.2f}%".format(100*acc_total/self.display_step))
+		            acc_total = 0
+		            loss_total = 0
+		            symbols_in = [self.training_data[i] for i in range(offset, offset + self.n_input)]
+		            symbols_out = self.training_data[offset + self.n_input]
+		            symbols_out_pred = reverse_dictionary[int(tf.argmax(onehot_pred, 1).eval())]
+		            print("%s - [%s] vs [%s]" % (symbols_in,symbols_out,symbols_out_pred))
+		            self.saver.save(session, name_model, global_step=step+1)
+		        step += 1
+		        offset += (self.n_input+1)
 
 
 
@@ -488,4 +566,9 @@ if __name__ == '__main__':
 
 	logger.info('Config LSTM')
 	optimizer, accuracy, cost, pred = music_creator.config_LSTM()
+	music_creation = \
+	music_creator.train(optimizer, accuracy, cost, pred, name_model = '../models/'+'prueba.modelo',
+	                                #sequence_length = sequence_length,
+	                                #starting_sequence = initial_sequence_chords
+	                                )
 
