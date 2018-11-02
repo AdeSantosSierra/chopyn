@@ -369,7 +369,7 @@ class CreateMusicFromDataframe(object):
 	def __init__(self, music_data, training_iters, n_input):
 
 		self.training_iters = training_iters
-		self.display_step = 100
+		self.display_step = 1000
 		self.n_input = n_input
 
 		# Read musical data
@@ -389,32 +389,46 @@ class CreateMusicFromDataframe(object):
 		n_hidden = 1024
 
 		# tf Graph input
-		self.x = tf.placeholder(tf.float32, 
+		self.x = tf.placeholder(dtype=tf.float32, 
 		                        shape=(None, self.num_columns_training_data), 
 		                        name = 'x')
-		self.y = tf.placeholder(tf.float32, 
+		self.y = tf.placeholder(dtype=tf.float32, 
 		                        shape=(None, self.num_columns_training_data),
 		                        name = 'y'
 		                        )
 
 		# RNN output node weights and biases
 		weights = {
-		    'out': tf.Variable(tf.random_normal([n_hidden, self.num_columns_training_data]))
+		    'out': tf.Variable(tf.random_uniform([n_hidden, self.num_columns_training_data], 
+		                                         minval = 0, 
+		                                         maxval = 1000, dtype=tf.float32))
 		}
 		biases = {
-		    'out': tf.Variable(tf.random_normal([self.num_columns_training_data]))
+		    'out': tf.Variable(tf.random_uniform([self.num_columns_training_data], 
+		                                         minval = 0, 
+		                                         maxval = 1000, dtype=tf.float32))
 		}
 
 		pred = self.RNN(self.x, weights, biases, n_hidden)
 
 		# Loss and optimizer
-		cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=pred, 
-		                                                              labels=self.y), name='cost')
+		# cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=pred, 
+		#                                                               labels=self.y), name='cost')
+		# pred = tf.Print(pred, [pred], 
+		#                 message="This is pred: ", 
+		#                 summarize = 100)
+		# pred = tf.Print(pred, [tf.shape(pred)], message="This is pred: ")
+
+		cost = tf.reduce_sum(tf.square(self.y - pred))
+
+
 		optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate).minimize(cost)
 
 		# Model evaluation
-		correct_pred = tf.equal(tf.argmax(pred,1), tf.argmax(self.y,1))
-		accuracy     = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
+		# correct_pred = tf.equal(tf.argmax(pred,1), tf.argmax(self.y,1))
+		# correct_pred = tf.cast(pred, tf.int32)
+		# correct_pred = tf.Print(correct_pred, [correct_pred], message="This is correct_pred: ")
+		accuracy     = cost
 		
 		# Initializing the variables
 		self.init    = tf.global_variables_initializer()
@@ -495,7 +509,7 @@ class CreateMusicFromDataframe(object):
 		        #                    for i in range(offset, offset+self.n_input) ])
 		        # symbols_in_keys = np.reshape(np.array(symbols_in_keys), [-1, self.n_input, 1])
 
-		        # symbols_out_onehot = np.zeros([vocab_size], dtype=float)
+		        # symbols_out_onehot = np.zeros([vocab_size], dtype=float32float)
 		        # symbols_out_onehot[self.dictionary[self.training_data[offset+self.n_input]]] = 1.0
 		        # symbols_out_onehot = np.reshape(symbols_out_onehot,[1,-1])
 
@@ -561,7 +575,7 @@ if __name__ == '__main__':
 
 	music_creator = CreateMusicFromDataframe(musical_dataframe,
 		                                     training_iters = 100000,
-		                                     n_input = 20
+		                                     n_input = 10
 		                                     )	
 
 	logger.info('Config LSTM')
