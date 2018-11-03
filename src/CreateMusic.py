@@ -606,7 +606,7 @@ if __name__ == '__main__':
 	#                     model_version_to_load = 99000, 
 	#                     bool_train = False)
 
-	train = False
+	train = True
 
 	musical_piece = Read(name_file_midi)
 
@@ -614,6 +614,7 @@ if __name__ == '__main__':
 
 	logger.info('Obtain the main dataframe of the musical piece')
 	musical_dataframe = musical_piece.convert_tonality_to_music_dataframe()
+	musical_dataframe = (musical_dataframe>0).astype(int)
 
 
 	music_creator = CreateMusicFromDataframe(musical_dataframe,
@@ -624,6 +625,8 @@ if __name__ == '__main__':
 	if train:
 		logger.info('Config LSTM')
 		optimizer, accuracy, cost, pred = music_creator.config_LSTM()
+
+		logger.info('Train')
 		music_creation = \
 		music_creator.train(optimizer, accuracy, cost, pred, name_model = '../models/'+'prueba.modelo',
 		                                #sequence_length = sequence_length,
