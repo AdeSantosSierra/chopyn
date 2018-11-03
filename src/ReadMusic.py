@@ -224,9 +224,6 @@ class Read(Score):
 		                     if renamed_notes in map_note_with_alias.keys()]
 		                     )
 
-		print(renamed_missing_notes)
-
-
 		# Apply the mapping transformation to the remaining notes
 		if agg_criteria == 'octave_name_note':
 			chord_df['chord'] = \
