@@ -437,7 +437,7 @@ class Read(Score):
 
 		return aggregated_chord_per_ticks
 
-	def convert_grades_sequence_to_notes(self,grades_sequence, tonic):
+	def convert_grades_sequence_to_notes(self, grades_sequence, tonic):
 
 		tonality_scale = self.get_map_tonic_with_scale()[tonic]
 		grade_mapping = self.get_map_grades_with_scale_position()
@@ -527,6 +527,9 @@ class Read(Score):
 
 		# Return dataframe with grades and duration
 		return grades_dataframe.fillna(0)
+
+	def convert_music_dataframe_to_notes(self, music_dataframe, tonic):
+		pass
 
 	def download_midi_music(self):
 		# Based on the work done by
