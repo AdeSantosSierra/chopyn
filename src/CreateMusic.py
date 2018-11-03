@@ -537,6 +537,47 @@ class CreateMusicFromDataframe(object):
 		        step += 1
 		        offset += (self.n_input+1)
 
+	def load_and_predict(self, dir_name_model, model_metadata, starting_sequence, sequence_length):
+
+		output_sequence = list()
+
+		with tf.Session() as session:
+
+			# Other attempts
+			# tf.saved_model.loader.load(session,[name_model], '/tmp')
+
+			#First let's load meta graph and restore weights
+			saver = tf.train.import_meta_graph(model_metadata)
+
+			# Initialize variables
+			session.run(tf.global_variables_initializer())
+			saver.restore(session,tf.train.latest_checkpoint(dir_name_model))
+			
+			graph = tf.get_default_graph()
+			pred  = graph.get_tensor_by_name("pred:0")
+			x     = graph.get_tensor_by_name("x:0")
+
+			for i in range(sequence_length):
+				
+				chord_prediction = session.run(pred, 
+				                               feed_dict={x: starting_sequence})	
+
+				max_chord_prediction = np.max(chord_prediction[0])
+				threshold = max_chord_prediction*.9
+				duration = 80
+				output_sequence.append(duration*(chord_prediction[0] > threshold))
+				
+				# Update Starting Sequence
+				starting_sequence = starting_sequence.iloc[1:]
+				starting_sequence.loc[sequence_length] = duration*(chord_prediction[0] > (threshold))
+				starting_sequence.reset_index(inplace=True, 
+				                              drop=True)
+		
+		print(output_sequence)
+
+		return output_sequence
+
+
 
 
 if __name__ == '__main__':
@@ -565,6 +606,8 @@ if __name__ == '__main__':
 	#                     model_version_to_load = 99000, 
 	#                     bool_train = False)
 
+	train = False
+
 	musical_piece = Read(name_file_midi)
 
 	print('La tonalidad es: '+musical_piece.get_tonality())
@@ -578,11 +621,26 @@ if __name__ == '__main__':
 		                                     n_input = 10
 		                                     )	
 
-	logger.info('Config LSTM')
-	optimizer, accuracy, cost, pred = music_creator.config_LSTM()
+	if train:
+		logger.info('Config LSTM')
+		optimizer, accuracy, cost, pred = music_creator.config_LSTM()
+		music_creation = \
+		music_creator.train(optimizer, accuracy, cost, pred, name_model = '../models/'+'prueba.modelo',
+		                                #sequence_length = sequence_length,
+		                                #starting_sequence = initial_sequence_chords
+		                                )
+
+
+	logger.info('Create Music!!')
+	model_version_to_load = 84000
+	dir_name_model = '../models'
+	name_model = 'prueba.modelo'
+	initial_sequence_chords = musical_dataframe.loc[0:9,:]
+	sequence_length = 10
 	music_creation = \
-	music_creator.train(optimizer, accuracy, cost, pred, name_model = '../models/'+'prueba.modelo',
-	                                #sequence_length = sequence_length,
-	                                #starting_sequence = initial_sequence_chords
-	                                )
+	music_creator.load_and_predict(dir_name_model,
+	                               dir_name_model+'/'+name_model+'-'+str(model_version_to_load)+'.meta',
+	                               initial_sequence_chords,
+	                               sequence_length = sequence_length
+	                               )
 
