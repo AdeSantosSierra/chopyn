@@ -538,8 +538,6 @@ class Read(Score):
 		notes_sequence = list()
 
 		num_chords_music_array = len(music_array)
-		print(num_chords_music_array)
-
 
 		for iter_music_array in music_array:
 			# Take the positions of those notes that were played
@@ -549,9 +547,11 @@ class Read(Score):
 			# [3,5] -> ['V4', 'II5']
 			grades_chords = [grades_as_columns[iter_notes_position] for iter_notes_position in notes_positions][0]
 
+			# List to store all the notes associated to the same chord
+			notes_chord = list()
+
 			# Iterate every chord
 			for note_in_chord in grades_chords:
-				notes_chord = list()
 				if note_in_chord[-1]!='+':
 					# If the note is not altered
 					octave = int(note_in_chord[-1])
@@ -579,8 +579,10 @@ class Read(Score):
 
 				notes_props = {'duration':200, 'intensity':70, 'timbre':1,
 						   'alteration':alteration, 'octave':octave}		
+				# Stores all the notes under a same chord
 				notes_chord.append(globals()[name_note](**notes_props))
 
+			# Store all the chords under a sequence
 			notes_sequence.append(notes_chord)
 
 		return notes_sequence

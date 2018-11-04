@@ -594,7 +594,7 @@ class CreateMusicFromDataframe(object):
 				starting_sequence.reset_index(inplace=True, 
 				                              drop=True)
 		
-		print(output_sequence)
+		# print(output_sequence)
 
 		return output_sequence
 
@@ -660,7 +660,7 @@ if __name__ == '__main__':
 	dir_name_model = '../models'
 	name_model = 'prueba.modelo'
 	initial_sequence_chords = musical_dataframe.loc[0:9,:]
-	sequence_length = 30
+	sequence_length = 100
 
 	music_creation = \
 	music_creator.load_and_predict(dir_name_model,
@@ -677,4 +677,11 @@ if __name__ == '__main__':
 	                                                  )
 	                )
 
-	print(chords_notes)
+	logger.info('Convert it to MIDI')
+	polyphony = SequenceChordPolyphony(chords_notes)
+	CSVtoMIDI(polyphony
+	          .convert_to_midi(),
+	          'dataframe_'+name_file_midi[13:-4]
+	          )
+
+	logger.info('Finished!!!')
