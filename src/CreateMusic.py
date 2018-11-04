@@ -594,9 +594,74 @@ class CreateMusicFromDataframe(object):
 				starting_sequence.reset_index(inplace=True, 
 				                              drop=True)
 		
-		# print(output_sequence)
-
 		return output_sequence
+
+
+class PlayMusicFromDataframe(object):
+
+	def __init__(self, name_file_midi, 
+	             n_input = 20, 
+	             training_iters = 100000, 
+	             sequence_length = 500, 
+	             model_version_to_load = 99000, 
+	             bool_train = False):
+
+
+		musical_piece = Read(name_file_midi)
+
+		print('La tonalidad es: '+musical_piece.get_tonality())
+
+		logger.info('Obtain the main dataframe of the musical piece')
+		musical_dataframe = musical_piece.convert_tonality_to_music_dataframe()
+		musical_dataframe = (musical_dataframe>0).astype(int)
+
+
+		music_creator = CreateMusicFromDataframe(musical_dataframe,
+			                                     training_iters = training_iters,
+			                                     n_input = n_input
+			                                     )	
+
+		if bool_train:
+			logger.info('Config LSTM')
+			optimizer, accuracy, cost, pred = music_creator.config_LSTM()
+
+			logger.info('Train')
+			music_creation = \
+			music_creator.train(optimizer, accuracy, cost, pred, 
+			                    name_model = '../models/'+'prueba.modelo')
+
+
+		logger.info('Create Music!!')
+		dir_name_model = '../models'
+		name_model = 'prueba.modelo'
+		initial_sequence_chords = musical_dataframe.loc[0:9,:]
+
+		music_creation = \
+		music_creator.load_and_predict(dir_name_model,
+		                               dir_name_model+'/'+name_model+'-'+str(model_version_to_load)+'.meta',
+		                               initial_sequence_chords,
+		                               sequence_length = sequence_length
+		                               )
+
+
+		logger.info('Convert grades to sequences')
+		chords_notes = (musical_piece
+		                .convert_music_dataframe_to_notes(music_creation,
+		                                                  musical_piece.get_tonality()
+		                                                  )
+		                )
+
+		logger.info('Convert it to MIDI')
+		polyphony = SequenceChordPolyphony(chords_notes)
+		CSVtoMIDI(polyphony
+		          .convert_to_midi(),
+		          'dataframe_'+name_file_midi[13:-4]
+		          )
+
+		logger.info('Finished!!!')
+
+
+
 
 
 
@@ -627,61 +692,11 @@ if __name__ == '__main__':
 	#                     model_version_to_load = 99000, 
 	#                     bool_train = False)
 
-	train = False
+	PlayMusicFromDataframe(name_file_midi, 
+	                       n_input = 10, 
+	                       training_iters = 100000, 
+	                       sequence_length = 200, 
+	                       model_version_to_load = 99000, 
+	                       bool_train = False)
 
-	musical_piece = Read(name_file_midi)
-
-	print('La tonalidad es: '+musical_piece.get_tonality())
-
-	logger.info('Obtain the main dataframe of the musical piece')
-	musical_dataframe = musical_piece.convert_tonality_to_music_dataframe()
-	musical_dataframe = (musical_dataframe>0).astype(int)
-
-
-	music_creator = CreateMusicFromDataframe(musical_dataframe,
-		                                     training_iters = 100000,
-		                                     n_input = 10
-		                                     )	
-
-	if train:
-		logger.info('Config LSTM')
-		optimizer, accuracy, cost, pred = music_creator.config_LSTM()
-
-		logger.info('Train')
-		music_creation = \
-		music_creator.train(optimizer, accuracy, cost, pred, name_model = '../models/'+'prueba.modelo',
-		                                #sequence_length = sequence_length,
-		                                #starting_sequence = initial_sequence_chords
-		                                )
-
-
-	logger.info('Create Music!!')
-	model_version_to_load = 99000
-	dir_name_model = '../models'
-	name_model = 'prueba.modelo'
-	initial_sequence_chords = musical_dataframe.loc[0:9,:]
-	sequence_length = 100
-
-	music_creation = \
-	music_creator.load_and_predict(dir_name_model,
-	                               dir_name_model+'/'+name_model+'-'+str(model_version_to_load)+'.meta',
-	                               initial_sequence_chords,
-	                               sequence_length = sequence_length
-	                               )
-
-
-	logger.info('Convert grades to sequences')
-	chords_notes = (musical_piece
-	                .convert_music_dataframe_to_notes(music_creation,
-	                                                  musical_piece.get_tonality()
-	                                                  )
-	                )
-
-	logger.info('Convert it to MIDI')
-	polyphony = SequenceChordPolyphony(chords_notes)
-	CSVtoMIDI(polyphony
-	          .convert_to_midi(),
-	          'dataframe_'+name_file_midi[13:-4]
-	          )
-
-	logger.info('Finished!!!')
+	
