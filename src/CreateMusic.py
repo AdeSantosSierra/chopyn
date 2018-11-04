@@ -616,6 +616,13 @@ class PlayMusicFromDataframe(object):
 		musical_dataframe = (musical_dataframe>0).astype(int)
 
 
+		name_model = 'n_input_'+str(n_input)+'_standard'+'_iters_'+str(training_iters)+'_'+name_file_midi[13:-4]
+		dir_name_model = '../models/'+name_model
+
+		if not os.path.exists(dir_name_model):
+		    os.makedirs(dir_name_model)
+
+
 		music_creator = CreateMusicFromDataframe(musical_dataframe,
 			                                     training_iters = training_iters,
 			                                     n_input = n_input
@@ -628,13 +635,12 @@ class PlayMusicFromDataframe(object):
 			logger.info('Train')
 			music_creation = \
 			music_creator.train(optimizer, accuracy, cost, pred, 
-			                    name_model = '../models/'+'prueba.modelo')
+			                    dir_name_model+'/'+name_model)
 
 
 		logger.info('Create Music!!')
-		dir_name_model = '../models'
-		name_model = 'prueba.modelo'
-		initial_sequence_chords = musical_dataframe.loc[0:9,:]
+		offset = random.randint(0, musical_dataframe.shape[0]-(n_input+1))
+		initial_sequence_chords = musical_dataframe.iloc[offset:(offset+n_input-1)]
 
 		music_creation = \
 		music_creator.load_and_predict(dir_name_model,
@@ -659,12 +665,6 @@ class PlayMusicFromDataframe(object):
 		          )
 
 		logger.info('Finished!!!')
-
-
-
-
-
-
 
 if __name__ == '__main__':
 
@@ -693,10 +693,10 @@ if __name__ == '__main__':
 	#                     bool_train = False)
 
 	PlayMusicFromDataframe(name_file_midi, 
-	                       n_input = 10, 
+	                       n_input = 20, 
 	                       training_iters = 100000, 
 	                       sequence_length = 200, 
 	                       model_version_to_load = 99000, 
-	                       bool_train = False)
+	                       bool_train = True)
 
 	
