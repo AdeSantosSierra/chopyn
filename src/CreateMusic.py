@@ -388,28 +388,37 @@ class CreateMusicFromDataframe(object):
 		# number of units in RNN cell
 		n_hidden = 1024
 
+		type_data = tf.float32
+
 		# tf Graph input
-		self.x = tf.placeholder(dtype=tf.float32, 
+		self.x = tf.placeholder(dtype=type_data, 
 		                        shape=(None, self.num_columns_training_data), 
 		                        name = 'x')
-		self.y = tf.placeholder(dtype=tf.float32, 
+		self.y = tf.placeholder(dtype=type_data, 
 		                        shape=(None, self.num_columns_training_data),
 		                        name = 'y'
 		                        )
 
 		# RNN output node weights and biases
-		weights = {
-		    'out': tf.Variable(tf.random_uniform([n_hidden, self.num_columns_training_data], 
+		weights = tf.Variable(tf.random_uniform([n_hidden, self.num_columns_training_data], 
 		                                         minval = 0, 
-		                                         maxval = 1000, dtype=tf.float32))
-		}
-		biases = {
-		    'out': tf.Variable(tf.random_uniform([self.num_columns_training_data], 
+		                                         maxval = 1, dtype=type_data))
+		biases = tf.Variable(tf.random_uniform([self.num_columns_training_data], 
 		                                         minval = 0, 
-		                                         maxval = 1000, dtype=tf.float32))
-		}
+		                                         maxval = 1, dtype=type_data))
+
+
+		
+		# weights = tf.Print(weights, [weights],
+		#                           message="This is weights: ",
+		#                           summarize = 100)
+
+		# biases = tf.Print(biases, [biases],
+		#                           message="This is biases: ",
+		#                           summarize = 100)
 
 		pred = self.RNN(self.x, weights, biases, n_hidden)
+
 
 		# Loss and optimizer
 		# cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=pred, 
@@ -419,8 +428,28 @@ class CreateMusicFromDataframe(object):
 		#                 summarize = 100)
 		# pred = tf.Print(pred, [tf.shape(pred)], message="This is pred: ")
 
-		cost = tf.reduce_sum(tf.square(self.y - pred))
+		# cost = tf.reduce_sum(tf.square(self.y - pred))
+		# print(cost)
+		# cost = tf.reduce_all(tf.equal(tf.sign(self.y),
+		#                               tf.sign(pred)))
 
+		
+
+		# Those that are zero, which value do they have?
+		# complementary = (tf.constant(1.0)-self.y)
+		# cost_zero = tf.multiply(complementary, pred)
+
+		# cost_zero = tf.Print(cost_zero, [cost_zero], message="This is cost_zero: ")
+		# # Those that are one, which value do they have?
+		# cost_ones = tf.multiply(self.y, pred)
+		# cost_ones = tf.Print(cost_ones, [cost_ones], message="This is cost_ones: ")
+
+		# cost = tf.reduce_sum(tf.add(cost_ones,cost_zero), name='cost')
+
+		# cost = tf.reduce_sum(tf.losses.cosine_distance(self.y, pred, axis = 1))
+		cost = tf.reduce_sum(tf.norm(self.y - pred), name='cost')
+		# cost = tf.Print(cost, [cost], message="This is cost: ")
+		# pred = tf.Print(pred, [pred], message="This is pred: ")
 
 		optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate).minimize(cost)
 
@@ -477,7 +506,7 @@ class CreateMusicFromDataframe(object):
 
 	    # there are n_input outputs but
 	    # we only want the last output
-		pred = tf.matmul(outputs[-1], weights['out']) + biases['out']
+		pred = tf.matmul(outputs[-1], weights) + biases
 		tf.identity(pred, 'pred')
 		return pred
 
@@ -502,40 +531,32 @@ class CreateMusicFromDataframe(object):
 
 		    while step < self.training_iters:
 		        # Generate a minibatch. Add some randomness on selection process.
-		        if offset > (len(self.training_data)-end_offset):
-		            offset = random.randint(0, self.n_input+1)
+				if offset > (len(self.training_data)-end_offset):
+					offset = random.randint(0, self.n_input+1)
 
-		        # symbols_in_keys = ([[self.dictionary[self.training_data[i]]] 
-		        #                    for i in range(offset, offset+self.n_input) ])
-		        # symbols_in_keys = np.reshape(np.array(symbols_in_keys), [-1, self.n_input, 1])
+				input_x = self.training_data.loc[offset:(offset+self.n_input-1),:]
+				input_y = self.training_data.loc[(offset+self.n_input-1),:].to_frame().T
 
-		        # symbols_out_onehot = np.zeros([vocab_size], dtype=float32float)
-		        # symbols_out_onehot[self.dictionary[self.training_data[offset+self.n_input]]] = 1.0
-		        # symbols_out_onehot = np.reshape(symbols_out_onehot,[1,-1])
-
-		        input_x = self.training_data.loc[offset:(offset+self.n_input-1),:]
-		        input_y = self.training_data.loc[(offset+self.n_input-1),:].to_frame().T
-
-		        _, acc, loss, onehot_pred = session.run([optimizer, accuracy, cost, pred], \
+				_, acc, loss, onehot_pred = session.run([optimizer, accuracy, cost, pred], \
 		                                                feed_dict={self.x: input_x, self.y: input_y})
 
 		        #print('pred')
 		        #print(pred)
-		        loss_total += loss
-		        acc_total += acc
-		        if (step+1) % self.display_step == 0:
-		            print("Iter= " + str(step+1) + ", Average Loss= " + \
-		                  "{:.6f}".format(loss_total/self.display_step) + ", Average Accuracy= " + \
-		                  "{:.2f}%".format(100*acc_total/self.display_step))
-		            acc_total = 0
-		            loss_total = 0
+				loss_total += loss
+				acc_total += acc
+				if (step+1) % self.display_step == 0:
+					print("Iter= " + str(step+1) + ", Average Loss= " + \
+						"{:.6f}".format(loss_total/self.display_step) + ", Average Accuracy= " + \
+						"{:.2f}%".format(100*acc_total/self.display_step))
+					acc_total = 0
+					loss_total = 0
 		            # symbols_in = [self.training_data[i] for i in range(offset, offset + self.n_input)]
 		            # symbols_out = self.training_data[offset + self.n_input]
 		            # symbols_out_pred = reverse_dictionary[int(tf.argmax(onehot_pred, 1).eval())]
 		            # print("%s - [%s] vs [%s]" % (symbols_in,symbols_out,symbols_out_pred))
-		            self.saver.save(session, name_model, global_step=step+1)
-		        step += 1
-		        offset += (self.n_input+1)
+					self.saver.save(session, name_model, global_step=step+1)
+				step += 1
+				offset += (self.n_input+1)
 
 	def load_and_predict(self, dir_name_model, model_metadata, starting_sequence, sequence_length):
 
@@ -635,11 +656,11 @@ if __name__ == '__main__':
 
 
 	logger.info('Create Music!!')
-	model_version_to_load = 84000
+	model_version_to_load = 68000
 	dir_name_model = '../models'
 	name_model = 'prueba.modelo'
 	initial_sequence_chords = musical_dataframe.loc[0:9,:]
-	sequence_length = 10
+	sequence_length = 30
 	music_creation = \
 	music_creator.load_and_predict(dir_name_model,
 	                               dir_name_model+'/'+name_model+'-'+str(model_version_to_load)+'.meta',

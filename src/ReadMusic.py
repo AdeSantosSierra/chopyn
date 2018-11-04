@@ -529,6 +529,9 @@ class Read(Score):
 		return grades_dataframe.fillna(0)
 
 	def convert_music_dataframe_to_notes(self, music_dataframe, tonic):
+
+		grades_as_columns = music_dataframe.columns
+
 		pass
 
 	def download_midi_music(self):
