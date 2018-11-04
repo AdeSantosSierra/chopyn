@@ -516,6 +516,7 @@ class Read(Score):
 
 		# Create a dataframe with all the columns
 		grades_dataframe = pd.DataFrame(columns = grades_as_columns)
+		self.empty_grades_dataframe = grades_dataframe
 
 		# Obtain tonality and grades sequence
 		grades_and_duration = self.apply_tonality()
@@ -530,7 +531,7 @@ class Read(Score):
 
 	def convert_music_dataframe_to_notes(self, music_dataframe, tonic):
 
-		grades_as_columns = music_dataframe.columns
+		grades_as_columns = self.empty_grades_dataframe.columns
 
 		pass
 
