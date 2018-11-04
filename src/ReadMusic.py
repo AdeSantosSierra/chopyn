@@ -529,11 +529,61 @@ class Read(Score):
 		# Return dataframe with grades and duration
 		return grades_dataframe.fillna(0)
 
-	def convert_music_dataframe_to_notes(self, music_dataframe, tonic):
+	def convert_music_dataframe_to_notes(self, music_array, tonic):
 
 		grades_as_columns = self.empty_grades_dataframe.columns
+		tonality_scale    = self.get_map_tonic_with_scale()[tonic]
+		grade_mapping     = self.get_map_grades_with_scale_position()
 
-		pass
+		notes_sequence = list()
+
+		num_chords_music_array = len(music_array)
+		print(num_chords_music_array)
+
+
+		for iter_music_array in music_array:
+			# Take the positions of those notes that were played
+			# [0,0,0,80,0,80] -> [3,5]
+			notes_positions = iter_music_array.nonzero()
+			# From former array, convert it to the corresponding grades
+			# [3,5] -> ['V4', 'II5']
+			grades_chords = [grades_as_columns[iter_notes_position] for iter_notes_position in notes_positions][0]
+
+			# Iterate every chord
+			for note_in_chord in grades_chords:
+				notes_chord = list()
+				if note_in_chord[-1]!='+':
+					# If the note is not altered
+					octave = int(note_in_chord[-1])
+					note_name = note_in_chord[:-1]
+					converted_note = tonality_scale[grade_mapping[note_name]]
+					if converted_note[-1] == 'b' or converted_note[-1] == '#':
+						alteration = converted_note[-1]
+						name_note  = converted_note[:-1]
+					else:
+						alteration = ''
+						name_note  = converted_note
+
+				else:
+					# Here, we have VI4+, II5+, ...
+					octave = int(note_in_chord[-2])
+					note_name = note_in_chord[:-2]
+					converted_note = tonality_scale[grade_mapping[note_name]]
+
+					if converted_note[-1] == 'b':
+						alteration = ''
+						name_note  = converted_note[:-1]
+					else:
+						alteration = '#'
+						name_note  = converted_note
+
+				notes_props = {'duration':200, 'intensity':70, 'timbre':1,
+						   'alteration':alteration, 'octave':octave}		
+				notes_chord.append(globals()[name_note](**notes_props))
+
+			notes_sequence.append(notes_chord)
+
+		return notes_sequence
 
 	def download_midi_music(self):
 		# Based on the work done by
