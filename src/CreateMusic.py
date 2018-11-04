@@ -584,7 +584,7 @@ class CreateMusicFromDataframe(object):
 				                               feed_dict={x: starting_sequence})	
 
 				max_chord_prediction = np.max(chord_prediction[0])
-				threshold = max_chord_prediction*.9
+				threshold = max_chord_prediction*.8
 				duration = 80
 				output_sequence.append(duration*(chord_prediction[0] > threshold))
 				
@@ -627,7 +627,7 @@ if __name__ == '__main__':
 	#                     model_version_to_load = 99000, 
 	#                     bool_train = False)
 
-	train = True
+	train = False
 
 	musical_piece = Read(name_file_midi)
 
@@ -656,11 +656,12 @@ if __name__ == '__main__':
 
 
 	logger.info('Create Music!!')
-	model_version_to_load = 68000
+	model_version_to_load = 99000
 	dir_name_model = '../models'
 	name_model = 'prueba.modelo'
 	initial_sequence_chords = musical_dataframe.loc[0:9,:]
 	sequence_length = 30
+
 	music_creation = \
 	music_creator.load_and_predict(dir_name_model,
 	                               dir_name_model+'/'+name_model+'-'+str(model_version_to_load)+'.meta',
@@ -668,3 +669,12 @@ if __name__ == '__main__':
 	                               sequence_length = sequence_length
 	                               )
 
+
+	logger.info('Convert grades to sequences')
+	chords_notes = (musical_piece
+	                .convert_music_dataframe_to_notes(music_creation,
+	                                                  musical_piece.get_tonality()
+	                                                  )
+	                )
+
+	print(chords_notes)
