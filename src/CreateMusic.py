@@ -247,7 +247,6 @@ class CreateMusicFromChords(object):
 
 				keys              = np.reshape(np.array(symbols_in_keys), [-1, self.n_input, 1])
 				onehot_pred       = session.run(pred, feed_dict={x: keys})
-				print(onehot_pred)
 				onehot_pred_index = int(tf.argmax(onehot_pred, 1).eval())
 				# print('symbols_out')
 				# print(onehot_pred_index)
@@ -583,13 +582,6 @@ class CreateMusicFromDataframe(object):
 				chord_prediction = session.run(pred, 
 				                               feed_dict={x: starting_sequence})	
 
-				print(chord_prediction)
-				print(starting_sequence)
-				max_chord_prediction = np.max(chord_prediction[0])
-				#threshold = max_chord_prediction*.8
-				# print('threshold: '+str(threshold))
-				duration = 1
-				# output_sequence.append(duration*(chord_prediction[0] > threshold))
 				output_sequence.append(chord_prediction[0])
 				
 				# Update Starting Sequence
@@ -649,7 +641,6 @@ class PlayMusicFromDataframe(object):
 
 		logger.info('Create Music!!')
 		offset = random.randint(0, musical_dataframe.shape[0]-(n_input+1))
-		print(offset)
 		initial_sequence_chords = musical_dataframe.iloc[offset:(offset+n_input)]
 
 		music_creation = \
@@ -658,8 +649,6 @@ class PlayMusicFromDataframe(object):
 		                               initial_sequence_chords,
 		                               sequence_length = sequence_length
 		                               )
-
-		print(music_creation)
 
 		logger.info('Convert grades to sequences')
 		chords_notes = (musical_piece
