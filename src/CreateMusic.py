@@ -582,18 +582,25 @@ class CreateMusicFromDataframe(object):
 				chord_prediction = session.run(pred, 
 				                               feed_dict={x: starting_sequence})	
 
-				output_sequence.append(chord_prediction[0])
+				# print(chord_prediction[0])
+
+				histogram = np.histogram(chord_prediction[0])
+				index_max_histogram = (np.argmax(histogram[0], axis = 0))
+				threshold = histogram[1][index_max_histogram+1]
+				# print(threshold)
+
+				output_sequence.append(chord_prediction[0]>threshold)
 				
 				# Update Starting Sequence
 				# print(starting_sequence)
-				starting_sequence.reset_index(inplace=True, 
-				                              drop=True)
+				starting_sequence.reset_index(inplace=True, drop=True)
 				starting_sequence = starting_sequence.iloc[1:]
 				# starting_sequence.loc[sequence_length] = duration*(chord_prediction[0] > (threshold))
-				starting_sequence.loc[sequence_length] = chord_prediction[0]
-				starting_sequence.reset_index(inplace=True, 
-				                              drop=True)
-				# print(starting_sequence)
+				starting_sequence.loc[sequence_length] = chord_prediction[0]>threshold
+				starting_sequence.reset_index(inplace=True, drop=True)
+				# print(np.histogram(chord_prediction[0])[1])
+				print(sum(chord_prediction[0]>threshold))
+				print(np.sum(starting_sequence, axis = 1))
 		
 		return output_sequence
 
@@ -693,10 +700,10 @@ if __name__ == '__main__':
 	#                     bool_train = False)
 
 	PlayMusicFromDataframe(name_file_midi, 
-	                       n_input = 20, 
+	                       n_input = 30, 
 	                       training_iters = 100000, 
 	                       sequence_length = 200, 
 	                       model_version_to_load = 37000, 
-	                       bool_train = False)
+	                       bool_train = True)
 
 	
