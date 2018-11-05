@@ -244,8 +244,10 @@ class CreateMusicFromChords(object):
 			
 
 			for i in range(sequence_length):
+
 				keys              = np.reshape(np.array(symbols_in_keys), [-1, self.n_input, 1])
 				onehot_pred       = session.run(pred, feed_dict={x: keys})
+				print(onehot_pred)
 				onehot_pred_index = int(tf.argmax(onehot_pred, 1).eval())
 				# print('symbols_out')
 				# print(onehot_pred_index)
@@ -369,7 +371,7 @@ class CreateMusicFromDataframe(object):
 	def __init__(self, music_data, training_iters, n_input):
 
 		self.training_iters = training_iters
-		self.display_step = 1000
+		self.display_step = 100
 		self.n_input = n_input
 
 		# Read musical data
@@ -402,10 +404,10 @@ class CreateMusicFromDataframe(object):
 		# RNN output node weights and biases
 		weights = tf.Variable(tf.random_uniform([n_hidden, self.num_columns_training_data], 
 		                                         minval = 0, 
-		                                         maxval = 1, dtype=type_data))
+		                                         maxval = 100, dtype=type_data))
 		biases = tf.Variable(tf.random_uniform([self.num_columns_training_data], 
 		                                         minval = 0, 
-		                                         maxval = 1, dtype=type_data))
+		                                         maxval = 100, dtype=type_data))
 
 
 		
@@ -417,7 +419,7 @@ class CreateMusicFromDataframe(object):
 		#                           message="This is biases: ",
 		#                           summarize = 100)
 
-		pred = self.RNN(self.x, weights, biases, n_hidden)
+		pred = tf.nn.softmax(self.RNN(self.x, weights, biases, n_hidden))
 
 
 		# Loss and optimizer
@@ -425,7 +427,7 @@ class CreateMusicFromDataframe(object):
 		#                                                               labels=self.y), name='cost')
 		# pred = tf.Print(pred, [pred], 
 		#                 message="This is pred: ", 
-		#                 summarize = 100)
+		#                 summarize = 10)
 		# pred = tf.Print(pred, [tf.shape(pred)], message="This is pred: ")
 
 		# cost = tf.reduce_sum(tf.square(self.y - pred))
@@ -448,8 +450,6 @@ class CreateMusicFromDataframe(object):
 
 		# cost = tf.reduce_sum(tf.losses.cosine_distance(self.y, pred, axis = 1))
 		cost = tf.reduce_sum(tf.norm(self.y - pred), name='cost')
-		# cost = tf.Print(cost, [cost], message="This is cost: ")
-		# pred = tf.Print(pred, [pred], message="This is pred: ")
 
 		optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate).minimize(cost)
 
@@ -514,22 +514,22 @@ class CreateMusicFromDataframe(object):
 
 		# Launch the graph
 		with tf.Session() as session:
-		    session.run(self.init)
-		    self.saver.save(session, name_model)
-		    step = 0
-		    offset = random.randint(0,self.n_input+1)
-		    end_offset = self.n_input + 1
-		    acc_total = 0
-		    loss_total = 0
+			session.run(self.init)
+			self.saver.save(session, name_model)
+			step = 0
+			offset = random.randint(0,self.n_input+1)
+			end_offset = self.n_input + 1
+			acc_total = 0
+			loss_total = 0
 
 		    # vocab_size = len(self.dictionary)
 
 		    # reverse_dictionary = dict(zip(self.dictionary.values(),
 		    #                               self.dictionary.keys()))
 
-		    self.writer.add_graph(session.graph)
+			self.writer.add_graph(session.graph)
 
-		    while step < self.training_iters:
+			while step < self.training_iters:
 		        # Generate a minibatch. Add some randomness on selection process.
 				if offset > (len(self.training_data)-end_offset):
 					offset = random.randint(0, self.n_input+1)
@@ -583,16 +583,25 @@ class CreateMusicFromDataframe(object):
 				chord_prediction = session.run(pred, 
 				                               feed_dict={x: starting_sequence})	
 
+				print(chord_prediction)
+				print(starting_sequence)
 				max_chord_prediction = np.max(chord_prediction[0])
-				threshold = max_chord_prediction*.8
-				duration = 80
-				output_sequence.append(duration*(chord_prediction[0] > threshold))
+				#threshold = max_chord_prediction*.8
+				# print('threshold: '+str(threshold))
+				duration = 1
+				# output_sequence.append(duration*(chord_prediction[0] > threshold))
+				output_sequence.append(chord_prediction[0])
 				
 				# Update Starting Sequence
-				starting_sequence = starting_sequence.iloc[1:]
-				starting_sequence.loc[sequence_length] = duration*(chord_prediction[0] > (threshold))
+				# print(starting_sequence)
 				starting_sequence.reset_index(inplace=True, 
 				                              drop=True)
+				starting_sequence = starting_sequence.iloc[1:]
+				# starting_sequence.loc[sequence_length] = duration*(chord_prediction[0] > (threshold))
+				starting_sequence.loc[sequence_length] = chord_prediction[0]
+				starting_sequence.reset_index(inplace=True, 
+				                              drop=True)
+				# print(starting_sequence)
 		
 		return output_sequence
 
@@ -640,7 +649,8 @@ class PlayMusicFromDataframe(object):
 
 		logger.info('Create Music!!')
 		offset = random.randint(0, musical_dataframe.shape[0]-(n_input+1))
-		initial_sequence_chords = musical_dataframe.iloc[offset:(offset+n_input-1)]
+		print(offset)
+		initial_sequence_chords = musical_dataframe.iloc[offset:(offset+n_input)]
 
 		music_creation = \
 		music_creator.load_and_predict(dir_name_model,
@@ -649,6 +659,7 @@ class PlayMusicFromDataframe(object):
 		                               sequence_length = sequence_length
 		                               )
 
+		print(music_creation)
 
 		logger.info('Convert grades to sequences')
 		chords_notes = (musical_piece
@@ -696,7 +707,7 @@ if __name__ == '__main__':
 	                       n_input = 20, 
 	                       training_iters = 100000, 
 	                       sequence_length = 200, 
-	                       model_version_to_load = 99000, 
-	                       bool_train = True)
+	                       model_version_to_load = 37000, 
+	                       bool_train = False)
 
 	
