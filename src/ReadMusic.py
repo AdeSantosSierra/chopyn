@@ -206,8 +206,6 @@ class Read(Score):
 		#agg_criteria = 'name_note'
 		chord_df = self.aggregate_chord_from_tick(aggregation_criteria = agg_criteria)
 		
-		print(chord_df[[u'octave_name_note', u'min_tick', u'max_tick']].to_string())
-		
 		all_notes = list(np.unique(list(itertools.chain(*chord_df[agg_criteria]))))
 
 		tonic = self.get_tonality()
@@ -412,32 +410,37 @@ class Read(Score):
 		# Rename the columns
 		aggregated_chord_per_ticks.columns = ['_'.join(col) for col in aggregated_chord_per_ticks.columns]
 
-
-		# Number of notes of the chord according to aggregation_criteria
+		# In order to avoid duration to be negative, start_ticks_min must be sorted.
+		# The main reason is due to the fact that when aggregating per id_aggregation_criteria it could be possible
+		# that many chords get some time advance in relation to real order.
+		aggregated_chord_per_ticks.sort_values(by = 'start_ticks_min', axis=0, inplace = True)
 
 		# Length in time (ticks) of the chord
 		aggregated_chord_per_ticks['time_length_chord'] = \
 		aggregated_chord_per_ticks['start_ticks_max']-aggregated_chord_per_ticks['start_ticks_min']+self.minimum_tick
-		aggregated_chord_per_ticks['start_ticks_min'][0] = self.get_max_tick()
+
+		# Set maximum value of the start_ticks_min
 		aggregated_chord_per_ticks['new_duration'] = np.roll(aggregated_chord_per_ticks['start_ticks_min'],-1)-aggregated_chord_per_ticks['start_ticks_min']
+		aggregated_chord_per_ticks.loc[aggregated_chord_per_ticks.index[-1], 'new_duration'] = self.get_max_tick()-aggregated_chord_per_ticks.loc[aggregated_chord_per_ticks.index[-1], 'start_ticks_min']
+
 		print(aggregated_chord_per_ticks[-10:-1].to_string())
 		print(np.roll(aggregated_chord_per_ticks['start_ticks_min'],-1))
 		print(aggregated_chord_per_ticks.groupby('new_duration').size())
 
 
 		# Analyze those notes that are not individual notes
-		tonic_chord_candidates = \
-		(aggregated_chord_per_ticks
-		      .groupby(aggregation_criteria+'_')
-		      .agg({'time_length_chord':'sum'})
-		      .filter([aggregation_criteria+'_','time_length_chord'])
-		      .sort_values('time_length_chord',ascending=False)
-		      .reset_index()
-		      )
+		# tonic_chord_candidates = \
+		# (aggregated_chord_per_ticks
+		#       .groupby(aggregation_criteria+'_')
+		#       .agg({'time_length_chord':'sum'})
+		#       .filter([aggregation_criteria+'_','time_length_chord'])
+		#       .sort_values('time_length_chord',ascending=False)
+		#       .reset_index()
+		#       )
 		
-		tonic_chord_candidates['n_elmnts_chord'] = tonic_chord_candidates[aggregation_criteria+'_'].apply(len)
+		# tonic_chord_candidates['n_elmnts_chord'] = tonic_chord_candidates[aggregation_criteria+'_'].apply(len)
 
-		tonic_chord_candidates.columns = ['notes','ticks','num_el']
+		# tonic_chord_candidates.columns = ['notes','ticks','num_el']
 
 		aggregated_chord_per_ticks.columns = \
 		['seq_id', aggregation_criteria, 'min_tick','max_tick', 'len', 'time']
