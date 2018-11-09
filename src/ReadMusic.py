@@ -101,6 +101,11 @@ class Read(Score):
 	def get_music_data(self):
 		return self.music_df
 
+	def get_max_tick(self):
+		return np.max(musical_piece.music_df['start_ticks']+
+		              musical_piece.music_df['dur_ticks']+1
+		              )
+
 	def calculate_name_note(self):
 
 		# Names can be F3#, A2#, then return F# and A#
@@ -201,6 +206,8 @@ class Read(Score):
 		#agg_criteria = 'name_note'
 		chord_df = self.aggregate_chord_from_tick(aggregation_criteria = agg_criteria)
 		
+		print(chord_df[[u'octave_name_note', u'min_tick', u'max_tick']].to_string())
+		
 		all_notes = list(np.unique(list(itertools.chain(*chord_df[agg_criteria]))))
 
 		tonic = self.get_tonality()
@@ -268,7 +275,6 @@ class Read(Score):
 			              ])))
 
 		chord_df['dur'] = chord_df['max_tick']-chord_df['min_tick']+20
-
 
 		return chord_df[['chord','grades','dur']]
 
@@ -361,7 +367,7 @@ class Read(Score):
 		           )
 		      .reset_index()
 		      )
-		# Do not forget the aggregated time pero granular chord.
+		# Do not forget the aggregated time per granular chord.
 
 	def aggregate_chord_from_tick(self, aggregation_criteria = 'name_note', dataframe = None):
 
@@ -393,9 +399,8 @@ class Read(Score):
 		# Store the final column into id_aggregation_criteria
 		chord_per_ticks['id_aggregation_criteria'] = np.cumsum([len(element)>0 
 		                                                       for element in changes_in_chords])
-
-
-
+		print('chord_per_ticks')
+		print(chord_per_ticks.loc[0:10,['start_ticks','octave_name_note']].to_string())
 		aggregated_chord_per_ticks = (chord_per_ticks
 		      .groupby(['id_aggregation_criteria',
 		               chord_per_ticks[aggregation_criteria].map(tuple)])
@@ -405,8 +410,12 @@ class Read(Score):
 		      .reset_index()
 		      )
 
+
+
 		# Rename the columns
 		aggregated_chord_per_ticks.columns = ['_'.join(col) for col in aggregated_chord_per_ticks.columns]
+
+
 
 		# Number of notes of the chord according to aggregation_criteria
 		aggregated_chord_per_ticks['num_elements_chord'] = \
@@ -415,6 +424,9 @@ class Read(Score):
 		# Length in time (ticks) of the chord
 		aggregated_chord_per_ticks['time_length_chord'] = \
 		aggregated_chord_per_ticks['start_ticks_max']-aggregated_chord_per_ticks['start_ticks_min']+self.minimum_tick
+		aggregated_chord_per_ticks['new_duration'] = np.roll(aggregated_chord_per_ticks['start_ticks_min'],-1)-aggregated_chord_per_ticks['start_ticks_min']
+		print(aggregated_chord_per_ticks[0:10].to_string())
+		print(aggregated_chord_per_ticks.groupby('new_duration').size())
 
 
 		# Analyze those notes that are not individual notes
@@ -859,18 +871,26 @@ if __name__ == "__main__":
 	name_file_midi = '../../scores/Albeniz_Asturias.csv'
 	name_file_midi = '../../scores/Schuber_Impromptu_D_899_No_3.csv'
 	name_file_midi = '../../scores/Bach-Partita_No1_in_Bb_BWV825_7Gigue.csv'
-	name_file_midi = '../../scores/Mozart_Sonata_16.csv'
-	name_file_midi = '../../scores/Bach_Cello_Suite_No_1.csv'
-	name_file_midi = '../../scores/Brahms_symphony_2_1.csv'
-	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
-	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_1.csv'
 	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_5.csv'
+	name_file_midi = '../../scores/Brahms_symphony_2_1.csv'
+	name_file_midi = '../../scores/Bach_Cello_Suite_No_1.csv'
+	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_1.csv'
+	name_file_midi = '../../scores/Mozart_Sonata_16.csv'
+	name_file_midi = '../../scores/Gymnopedie_No_1.csv'
+	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
 	#name_file_midi = '../../scores/Beethoven_Moonlight_Sonata_third_movement.csv'
 	#name_file_midi = '../../scores/Schubert_Piano_Trio_2nd_Movement.csv'
 	
 	musical_piece = Read(name_file_midi)
-	print(musical_piece.get_tonality())
 
+	#print(musical_piece.granular_music_df.groupby('start_ticks').size())
+	print('holaaaaaaa')
+	print(musical_piece.music_df.tail(10).to_string())
+	print(np.max(musical_piece.music_df['start_ticks']+
+	             musical_piece.music_df['dur_ticks']+1
+	             ))
+	# print(musical_piece.granular_music_df.head(100).to_string())
+	# print(musical_piece.apply_tonality())
 
 
 
