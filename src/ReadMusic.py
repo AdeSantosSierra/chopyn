@@ -210,8 +210,6 @@ class Read(Score):
 
 		tonic = self.get_tonality()
 
-
-
 		# Find the intersection between notes in the scale and notes in the piece of music
 		tonic_scale_notes = map_tonic_with_scale[tonic]
 		if agg_criteria == 'octave_name_note':
@@ -272,9 +270,7 @@ class Read(Score):
 			              for chord_element in tuple_x
 			              ])))
 
-		chord_df['dur'] = chord_df['max_tick']-chord_df['min_tick']+20
-
-		return chord_df[['chord','grades','dur']]
+		return chord_df[['chord','grades','time']]
 
 	def _apply_tonality_to_altered_notes(self, chord_element, tonic_scale_notes):
 		
@@ -416,15 +412,13 @@ class Read(Score):
 		aggregated_chord_per_ticks.sort_values(by = 'start_ticks_min', axis=0, inplace = True)
 
 		# Length in time (ticks) of the chord
-		aggregated_chord_per_ticks['time_length_chord'] = \
-		aggregated_chord_per_ticks['start_ticks_max']-aggregated_chord_per_ticks['start_ticks_min']+self.minimum_tick
+		# aggregated_chord_per_ticks['time_length_chord'] = \
+		# aggregated_chord_per_ticks['start_ticks_max']-aggregated_chord_per_ticks['start_ticks_min']+self.minimum_tick
 
 		# Set maximum value of the start_ticks_min
 		aggregated_chord_per_ticks['new_duration'] = np.roll(aggregated_chord_per_ticks['start_ticks_min'],-1)-aggregated_chord_per_ticks['start_ticks_min']
 		aggregated_chord_per_ticks.loc[aggregated_chord_per_ticks.index[-1], 'new_duration'] = self.get_max_tick()-aggregated_chord_per_ticks.loc[aggregated_chord_per_ticks.index[-1], 'start_ticks_min']
-
-		print(aggregated_chord_per_ticks[-10:-1].to_string())
-		print(np.roll(aggregated_chord_per_ticks['start_ticks_min'],-1))
+		
 		print(aggregated_chord_per_ticks.groupby('new_duration').size())
 
 
@@ -443,7 +437,7 @@ class Read(Score):
 		# tonic_chord_candidates.columns = ['notes','ticks','num_el']
 
 		aggregated_chord_per_ticks.columns = \
-		['seq_id', aggregation_criteria, 'min_tick','max_tick', 'len', 'time']
+		['seq_id', aggregation_criteria, 'min_tick','max_tick', 'time']
 
 		return aggregated_chord_per_ticks
 
@@ -871,11 +865,11 @@ if __name__ == "__main__":
 	name_file_midi = '../../scores/Bach-Partita_No1_in_Bb_BWV825_7Gigue.csv'
 	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_5.csv'
 	name_file_midi = '../../scores/Brahms_symphony_2_1.csv'
-	name_file_midi = '../../scores/Bach_Cello_Suite_No_1.csv'
-	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_1.csv'
 	name_file_midi = '../../scores/Mozart_Sonata_16.csv'
-	name_file_midi = '../../scores/Gymnopedie_No_1.csv'
 	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
+	name_file_midi = '../../scores/Gymnopedie_No_1.csv'
+	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_1.csv'
+	name_file_midi = '../../scores/Bach_Cello_Suite_No_1.csv'
 	#name_file_midi = '../../scores/Beethoven_Moonlight_Sonata_third_movement.csv'
 	#name_file_midi = '../../scores/Schubert_Piano_Trio_2nd_Movement.csv'
 	
