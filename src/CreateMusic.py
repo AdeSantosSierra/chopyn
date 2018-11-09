@@ -418,7 +418,7 @@ class CreateMusicFromDataframe(object):
 		#                           message="This is biases: ",
 		#                           summarize = 100)
 
-		pred = tf.nn.softmax(self.RNN(self.x, weights, biases, n_hidden))
+		pred = (self.RNN(self.x, weights, biases, n_hidden))
 
 
 		# Loss and optimizer
@@ -448,7 +448,25 @@ class CreateMusicFromDataframe(object):
 		# cost = tf.reduce_sum(tf.add(cost_ones,cost_zero), name='cost')
 
 		# cost = tf.reduce_sum(tf.losses.cosine_distance(self.y, pred, axis = 1))
-		cost = tf.reduce_sum(tf.norm(self.y - pred), name='cost')
+
+		selfy = self.y
+
+		selfy = tf.Print(selfy, [selfy],
+		                          message="This is selfy: ",
+		                          summarize = 100)
+
+		pred = tf.Print(pred, [pred],
+		                          message="This is pred: ",
+		                          summarize = 100)
+
+		argmax = tf.cast(tf.argmax(selfy, 1), tf.float32)
+
+		argmax = tf.Print(argmax, [argmax],
+		                          message="This is biases: ",
+		                          summarize = 100)
+
+		# cost = tf.reduce_sum(tf.norm(self.y - pred), name='cost')
+		cost = tf.reduce_sum(tf.norm(selfy - pred), name='cost')
 
 		optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate).minimize(cost)
 
@@ -497,6 +515,7 @@ class CreateMusicFromDataframe(object):
 	    # 2-layer LSTM, each layer has n_hidden units.
 	    # Average Accuracy= 95.20% at 50k iter
 		rnn_cell = rnn.MultiRNNCell([rnn.BasicLSTMCell(n_hidden),
+	                                rnn.BasicLSTMCell(n_hidden),
 	                                rnn.BasicLSTMCell(n_hidden),
 	                                rnn.BasicLSTMCell(n_hidden)])
 
@@ -579,14 +598,17 @@ class CreateMusicFromDataframe(object):
 
 			for i in range(sequence_length):
 				
-				chord_prediction = session.run(pred, 
+				chord_prediction = session.run((pred), 
 				                               feed_dict={x: starting_sequence})	
 
 				# print(chord_prediction[0])
 
 				histogram = np.histogram(chord_prediction[0])
+				print(histogram[0])
+				print(np.sum(chord_prediction[0]>0.1))
+				# print(np.median(chord_prediction[0]))
 				index_max_histogram = (np.argmax(histogram[0], axis = 0))
-				threshold = histogram[1][index_max_histogram+1]
+				threshold = 0 #histogram[1][index_max_histogram+1]
 				# print(threshold)
 
 				output_sequence.append(chord_prediction[0]>threshold)
@@ -599,8 +621,7 @@ class CreateMusicFromDataframe(object):
 				starting_sequence.loc[sequence_length] = chord_prediction[0]>threshold
 				starting_sequence.reset_index(inplace=True, drop=True)
 				# print(np.histogram(chord_prediction[0])[1])
-				print(sum(chord_prediction[0]>threshold))
-				print(np.sum(starting_sequence, axis = 1))
+				# print(sum(chord_prediction[0]>threshold))
 		
 		return output_sequence
 
@@ -621,7 +642,7 @@ class PlayMusicFromDataframe(object):
 
 		logger.info('Obtain the main dataframe of the musical piece')
 		musical_dataframe = musical_piece.convert_tonality_to_music_dataframe()
-		musical_dataframe = (musical_dataframe>0).astype(int)
+		# musical_dataframe = (musical_dataframe>0).astype(int)
 
 
 		name_model = 'n_input_'+str(n_input)+'_standard'+'_iters_'+str(training_iters)+'_'+name_file_midi[13:-4]
@@ -682,13 +703,13 @@ if __name__ == '__main__':
 	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_5.csv'
 	name_file_midi = '../../scores/Schuber_Impromptu_D_899_No_3.csv'
 	name_file_midi = '../../scores/Mozart_Rondo.csv'
-	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_1.csv'
 	name_file_midi = '../../scores/Mozart_Sonata_16.csv'
 	name_file_midi = '../../scores/Bach-Partita_No1_in_Bb_BWV825_7Gigue.csv'
 	name_file_midi = '../../scores/Brahms_symphony_2_1.csv'
 	name_file_midi = '../../scores/Bach_Cello_Suite_No_1.csv'
-	name_file_midi = '../../scores/Gymnopedie_No_1.csv'
+	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_1.csv'
 	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
+	name_file_midi = '../../scores/Gymnopedie_No_1.csv'
 	#name_file_midi = '../../scores/Beethoven_Moonlight_Sonata_third_movement.csv'
 	#name_file_midi = '../../scores/Schubert_Piano_Trio_2nd_Movement.csv'
 	
@@ -699,11 +720,25 @@ if __name__ == '__main__':
 	#                     model_version_to_load = 99000, 
 	#                     bool_train = False)
 
-	PlayMusicFromDataframe(name_file_midi, 
-	                       n_input = 30, 
-	                       training_iters = 100000, 
-	                       sequence_length = 200, 
-	                       model_version_to_load = 37000, 
-	                       bool_train = True)
+	# PlayMusicFromDataframe(name_file_midi, 
+	#                        n_input = 50, 
+	#                        training_iters = 100000, 
+	#                        sequence_length = 200, 
+	#                        model_version_to_load = 22100, 
+	#                        bool_train = True)
+
+	musical_piece = Read(name_file_midi)
+	grades_chords = musical_piece.apply_tonality()
+
+	print(grades_chords.groupby('dur').size())
+	print(musical_piece
+	      .get_music_data()
+	      .groupby('dur_ticks')
+	      .size()
+	      )
+
+	print(musical_piece.music_df.columns)
+	print(musical_piece.music_df[[u'start_ticks', u'start_ms', u'dur_ticks', u'dur_ms']])
+	print(grades_chords)
 
 	
