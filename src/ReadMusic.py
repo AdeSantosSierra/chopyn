@@ -192,11 +192,9 @@ class Read(Score):
 
 		return next(iter(OrderedDict(sorted(tonality_candidates.items(), key=lambda t: -t[1]))))
 			
-
 	def apply_tonality(self):
 
 		map_tonic_with_scale = self.get_map_tonic_with_scale()
-		
 		map_note_with_alias  = self.get_map_note_with_alias()
 
 		
@@ -271,6 +269,35 @@ class Read(Score):
 			              ])))
 
 		return chord_df[['chord','grades','time']]
+
+
+	def apply_duration(self, chord_df):
+
+		# Make a hisotgram of the duration of each chord
+		aggregated_time = (chord_df.groupby('time').size().reset_index(name='histogram'))
+		aggregated_time.sort_values(by = 'histogram', ascending = False, inplace = True)
+		# aggregated_time.reset_index(inplace = True)
+
+		# Take the 8-top most common times
+		top_most_common_time = 8
+
+		# Take the minimum of the time within that 8-top most common times
+		# Why? Because that minimum is suppose to be the minimum temporal division
+		min_duration = np.min(aggregated_time.loc[:top_most_common_time, 'time'])
+
+		print(min_duration)
+
+		aggregated_time['prop_duration'] = (aggregated_time['time']/min_duration).astype(int)
+		print(aggregated_time.to_string())
+
+		# These are the only possibilities allowed in terms of time
+		map_duration = [1,2,3,4,6,8,12,16,24,32]
+
+		# Take all the prop_durations
+		prop_durations = np.unique(aggregated_time['prop_duration'])
+		for iter_prop_durations in prop_durations:
+			print([iter_prop_durations, map_duration[np.argmin(np.abs(map_duration-iter_prop_durations))]])
+
 
 	def _apply_tonality_to_altered_notes(self, chord_element, tonic_scale_notes):
 		
@@ -393,6 +420,9 @@ class Read(Score):
 		# Store the final column into id_aggregation_criteria
 		chord_per_ticks['id_aggregation_criteria'] = np.cumsum([len(element)>0 
 		                                                       for element in changes_in_chords])
+
+		# print(chord_per_ticks[0:100].to_string())
+
 		aggregated_chord_per_ticks = (chord_per_ticks
 		      .groupby(['id_aggregation_criteria',
 		               chord_per_ticks[aggregation_criteria].map(tuple)])
@@ -411,30 +441,9 @@ class Read(Score):
 		# that many chords get some time advance in relation to real order.
 		aggregated_chord_per_ticks.sort_values(by = 'start_ticks_min', axis=0, inplace = True)
 
-		# Length in time (ticks) of the chord
-		# aggregated_chord_per_ticks['time_length_chord'] = \
-		# aggregated_chord_per_ticks['start_ticks_max']-aggregated_chord_per_ticks['start_ticks_min']+self.minimum_tick
-
 		# Set maximum value of the start_ticks_min
 		aggregated_chord_per_ticks['new_duration'] = np.roll(aggregated_chord_per_ticks['start_ticks_min'],-1)-aggregated_chord_per_ticks['start_ticks_min']
 		aggregated_chord_per_ticks.loc[aggregated_chord_per_ticks.index[-1], 'new_duration'] = self.get_max_tick()-aggregated_chord_per_ticks.loc[aggregated_chord_per_ticks.index[-1], 'start_ticks_min']
-		
-		print(aggregated_chord_per_ticks.groupby('new_duration').size())
-
-
-		# Analyze those notes that are not individual notes
-		# tonic_chord_candidates = \
-		# (aggregated_chord_per_ticks
-		#       .groupby(aggregation_criteria+'_')
-		#       .agg({'time_length_chord':'sum'})
-		#       .filter([aggregation_criteria+'_','time_length_chord'])
-		#       .sort_values('time_length_chord',ascending=False)
-		#       .reset_index()
-		#       )
-		
-		# tonic_chord_candidates['n_elmnts_chord'] = tonic_chord_candidates[aggregation_criteria+'_'].apply(len)
-
-		# tonic_chord_candidates.columns = ['notes','ticks','num_el']
 
 		aggregated_chord_per_ticks.columns = \
 		['seq_id', aggregation_criteria, 'min_tick','max_tick', 'time']
@@ -860,16 +869,16 @@ if __name__ == "__main__":
 
 	name_file_midi = '../../scores/Schubert_S560_Schwanengesang_no7.csv'
 	name_file_midi = '../../scores/Brahms_symphony_2_2.csv' # Si M
-	name_file_midi = '../../scores/Albeniz_Asturias.csv'
-	name_file_midi = '../../scores/Schuber_Impromptu_D_899_No_3.csv'
-	name_file_midi = '../../scores/Bach-Partita_No1_in_Bb_BWV825_7Gigue.csv'
 	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_5.csv'
-	name_file_midi = '../../scores/Brahms_symphony_2_1.csv'
 	name_file_midi = '../../scores/Mozart_Sonata_16.csv'
-	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
-	name_file_midi = '../../scores/Gymnopedie_No_1.csv'
-	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_1.csv'
 	name_file_midi = '../../scores/Bach_Cello_Suite_No_1.csv'
+	name_file_midi = '../../scores/Gymnopedie_No_1.csv'
+	name_file_midi = '../../scores/Brahms_symphony_2_1.csv' # Very Slow
+	name_file_midi = '../../scores/Bach-Partita_No1_in_Bb_BWV825_7Gigue.csv'
+	name_file_midi = '../../scores/Schuber_Impromptu_D_899_No_3.csv'
+	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
+	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_1.csv'
+	name_file_midi = '../../scores/Albeniz_Asturias.csv'
 	#name_file_midi = '../../scores/Beethoven_Moonlight_Sonata_third_movement.csv'
 	#name_file_midi = '../../scores/Schubert_Piano_Trio_2nd_Movement.csv'
 	
@@ -877,12 +886,7 @@ if __name__ == "__main__":
 
 	#print(musical_piece.granular_music_df.groupby('start_ticks').size())
 	print('holaaaaaaa')
-	print(musical_piece.music_df.tail(10).to_string())
-	print(np.max(musical_piece.music_df['start_ticks']+
-	             musical_piece.music_df['dur_ticks']+1
-	             ))
-	# print(musical_piece.granular_music_df.head(100).to_string())
-	print(musical_piece.apply_tonality())
+	musical_piece.apply_duration(musical_piece.apply_tonality())
 
 
 
