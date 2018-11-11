@@ -285,19 +285,10 @@ class Read(Score):
 		# Why? Because that minimum is suppose to be the minimum temporal division
 		min_duration = np.min(aggregated_time.loc[:top_most_common_time, 'time'])
 
-		print(min_duration)
+		chord_df['prop_duration'] = (chord_df['time']/min_duration).astype(int)
 
-		aggregated_time['prop_duration'] = (aggregated_time['time']/min_duration).astype(int)
-		print(aggregated_time.to_string())
-
-		# These are the only possibilities allowed in terms of time
-		map_duration = [1,2,3,4,6,8,12,16,24,32]
-
-		# Take all the prop_durations
-		prop_durations = np.unique(aggregated_time['prop_duration'])
-		for iter_prop_durations in prop_durations:
-			print([iter_prop_durations, map_duration[np.argmin(np.abs(map_duration-iter_prop_durations))]])
-
+		chord_df['general_duration'] = chord_df['prop_duration'].apply(_apply_general_duration)
+		print(chord_df.to_string())
 
 	def _apply_tonality_to_altered_notes(self, chord_element, tonic_scale_notes):
 		
@@ -865,6 +856,11 @@ def _convert_note_into_grade(chord_tuple):
 
 	tonality = self.get_tonality()
 
+def _apply_general_duration(prop_duration):
+	# These are the only possibilities allowed in terms of time
+	map_duration = [1,2,3,4,6,8,12,16,24,32]
+	return map_duration[np.argmin(np.abs(np.array(map_duration)-prop_duration))]
+
 if __name__ == "__main__":
 
 	name_file_midi = '../../scores/Schubert_S560_Schwanengesang_no7.csv'
@@ -876,9 +872,9 @@ if __name__ == "__main__":
 	name_file_midi = '../../scores/Brahms_symphony_2_1.csv' # Very Slow
 	name_file_midi = '../../scores/Bach-Partita_No1_in_Bb_BWV825_7Gigue.csv'
 	name_file_midi = '../../scores/Schuber_Impromptu_D_899_No_3.csv'
-	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
 	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_1.csv'
 	name_file_midi = '../../scores/Albeniz_Asturias.csv'
+	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
 	#name_file_midi = '../../scores/Beethoven_Moonlight_Sonata_third_movement.csv'
 	#name_file_midi = '../../scores/Schubert_Piano_Trio_2nd_Movement.csv'
 	
