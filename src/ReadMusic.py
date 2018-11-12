@@ -105,8 +105,8 @@ class Read(Score):
 		return self.music_df
 
 	def get_max_tick(self):
-		return np.max(musical_piece.music_df['start_ticks']+
-		              musical_piece.music_df['dur_ticks']+1
+		return np.max(self.music_df['start_ticks']+
+		              self.music_df['dur_ticks']+1
 		              )
 
 	def calculate_name_note(self):
@@ -526,7 +526,6 @@ class Read(Score):
 	def convert_tonality_to_music_dataframe(self):
 
 		num_octaves = 8
-
 		grades_as_columns = list()
 
 		# Calculate the names of all the columns depending on the num of octaves
