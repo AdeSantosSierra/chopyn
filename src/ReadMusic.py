@@ -271,27 +271,7 @@ class Read(Score):
 			              for chord_element in tuple_x
 			              ])))
 
-		return chord_df[['chord','grades','time']]
-
-	def apply_duration(self, chord_df):
-
-		# Make a hisotgram of the duration of each chord
-		aggregated_time = (chord_df.groupby('time').size().reset_index(name='histogram'))
-		aggregated_time.sort_values(by = 'histogram', ascending = False, inplace = True)
-		# aggregated_time.reset_index(inplace = True)
-
-		# Take the 8-top most common times
-		top_most_common_time = 8
-
-		# Take the minimum of the time within that 8-top most common times
-		# Why? Because that minimum is suppose to be the minimum temporal division
-		min_duration = np.min(aggregated_time.loc[:top_most_common_time, 'time'])
-
-		chord_df['prop_duration'] = (chord_df['time']/min_duration).astype(int)
-
-		chord_df['general_duration'] = chord_df['prop_duration'].apply(_apply_general_duration)
-
-		return chord_df
+		self.chord_df = chord_df[['chord','grades','time']]
 
 	def _apply_tonality_to_altered_notes(self, chord_element, tonic_scale_notes):
 		
@@ -505,17 +485,32 @@ class Read(Score):
 				
 		return notes_sequence
 
-	def enrich_grades_with_duration(self, enriched_chord_df):
+	def enrich_grades_with_duration(self, chord_df):
 
-		enriched_chord_df['enriched_grades'] = \
-		(enriched_chord_df
+		# Make a histogram of the duration of each chord
+		aggregated_time = (chord_df.groupby('time').size().reset_index(name='histogram'))
+		aggregated_time.sort_values(by = 'histogram', ascending = False, inplace = True)
+		# aggregated_time.reset_index(inplace = True)
+
+		# Take the 8-top most common times
+		top_most_common_time = 8
+
+		# Take the minimum of the time within that 8-top most common times
+		# Why? Because that minimum is suppose to be the minimum temporal division
+		min_duration = np.min(aggregated_time.loc[:top_most_common_time, 'time'])
+
+		chord_df['prop_duration'] = (chord_df['time']/min_duration).astype(int)
+
+		chord_df['general_duration'] = chord_df['prop_duration'].apply(_apply_general_duration)
+
+		chord_df['enriched_grades'] = \
+		(chord_df
 		 .apply(lambda row_df: tuple(str(row_df['general_duration'])+'.'+ chord_element for chord_element in row_df['grades']), 
 		        axis = 1)
 		 )
 
-		print(enriched_chord_df[['grades','time','enriched_grades']].to_string())
-
-		return enriched_chord_df
+		self.chord_df = chord_df[['chord','grades','time','enriched_grades']]
+		print(self.chord_df.to_string())
 
 	def convert_tonality_to_music_dataframe(self):
 
@@ -895,7 +890,7 @@ if __name__ == "__main__":
 
 	#print(musical_piece.granular_music_df.groupby('start_ticks').size())
 	print('holaaaaaaa')
-	enriched_chord_df = musical_piece.apply_duration(musical_piece.apply_tonality())
+	enriched_chord_df = musical_piece.apply_tonality()
 	musical_piece.enrich_grades_with_duration(enriched_chord_df)
 	# musical_piece.convert_tonality_to_music_dict()
 
