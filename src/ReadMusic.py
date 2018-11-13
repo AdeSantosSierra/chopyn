@@ -290,7 +290,8 @@ class Read(Score):
 		chord_df['prop_duration'] = (chord_df['time']/min_duration).astype(int)
 
 		chord_df['general_duration'] = chord_df['prop_duration'].apply(_apply_general_duration)
-		print(chord_df.head().to_string())
+
+		return chord_df
 
 	def _apply_tonality_to_altered_notes(self, chord_element, tonic_scale_notes):
 		
@@ -504,24 +505,17 @@ class Read(Score):
 				
 		return notes_sequence
 
-	def convert_tonality_to_music_dict(self):
+	def enrich_grades_with_duration(self, enriched_chord_df):
 
-		num_octaves = 8
+		enriched_chord_df['enriched_grades'] = \
+		(enriched_chord_df
+		 .apply(lambda row_df: tuple(str(row_df['general_duration'])+ chord_element for chord_element in row_df['grades']), 
+		        axis = 1)
+		 )
 
-		grades_as_columns = list()
+		print(enriched_chord_df[['grades','time','enriched_grades']].to_string())
 
-		# Calculate the names of all the columns depending on the num of octaves
-		# ['I','I+', ...] -> ['I1','I1+', ..., 'V5','V5+']
-		for iter_map_duration in self.map_duration:
-			for iter_num_octaves in range(1, num_octaves+1):
-				for iter_grade in self.all_grades:
-					if iter_grade[-1] != '+':
-						grades_as_columns.extend([str(iter_map_duration)+iter_grade+str(iter_num_octaves)])
-					else:
-						grades_as_columns.extend([str(iter_map_duration)+iter_grade[:-1]+str(iter_num_octaves)+'+'])
-
-		print(len(grades_as_columns))
-		print(grades_as_columns)
+		return enriched_chord_df
 
 	def convert_tonality_to_music_dataframe(self):
 
@@ -892,8 +886,8 @@ if __name__ == "__main__":
 	name_file_midi = '../../scores/Bach-Partita_No1_in_Bb_BWV825_7Gigue.csv'
 	name_file_midi = '../../scores/Schuber_Impromptu_D_899_No_3.csv'
 	name_file_midi = '../../scores/Albeniz_Asturias.csv'
-	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
 	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_1.csv'
+	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
 	#name_file_midi = '../../scores/Beethoven_Moonlight_Sonata_third_movement.csv'
 	#name_file_midi = '../../scores/Schubert_Piano_Trio_2nd_Movement.csv'
 	
@@ -901,9 +895,9 @@ if __name__ == "__main__":
 
 	#print(musical_piece.granular_music_df.groupby('start_ticks').size())
 	print('holaaaaaaa')
-	# musical_piece.apply_duration(musical_piece.apply_tonality())
-	musical_piece.convert_tonality_to_music_dataframe()
-	musical_piece.convert_tonality_to_music_dict()
+	enriched_chord_df = musical_piece.apply_duration(musical_piece.apply_tonality())
+	musical_piece.enrich_grades_with_duration(enriched_chord_df)
+	# musical_piece.convert_tonality_to_music_dict()
 
 
 
