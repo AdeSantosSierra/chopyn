@@ -32,8 +32,6 @@ import os
 
 class CreateMusicFromChords(object):
 
-
-
 	def __init__(self, music_data, training_iters, n_input):
 
 		self.training_iters = training_iters
@@ -694,6 +692,41 @@ class PlayMusicFromDataframe(object):
 
 		logger.info('Finished!!!')
 
+
+class CreateMusicFromChordSequences(object):
+
+
+	def enc_dec_model_inputs():
+	    inputs = tf.placeholder(tf.int32, [None, None], name='input')
+	    targets = tf.placeholder(tf.int32, [None, None], name='targets') 
+	    
+	    target_sequence_length = tf.placeholder(tf.int32, [None], name='target_sequence_length')
+	    max_target_len = tf.reduce_max(target_sequence_length)    
+	    
+	    return inputs, targets, target_sequence_length, max_target_len
+
+
+	def encoding_layer(rnn_inputs, rnn_size, num_layers, keep_prob, 
+                   source_vocab_size, 
+                   encoding_embedding_size):
+	    """
+	    :return: tuple (RNN output, RNN state)
+	    """
+	    embed = tf.contrib.layers.embed_sequence(rnn_inputs, 
+	                                             vocab_size=source_vocab_size, 
+	                                             embed_dim=encoding_embedding_size)
+	    
+	    stacked_cells = tf.contrib.rnn.MultiRNNCell([tf.contrib.rnn.DropoutWrapper(tf.contrib.rnn.LSTMCell(rnn_size), 
+	                                                                               keep_prob) for _ in range(num_layers)])
+	    
+	    outputs, state = tf.nn.dynamic_rnn(stacked_cells, 
+	                                       embed, 
+	                                       dtype=tf.float32)
+	    return outputs, state
+
+
+
+
 if __name__ == '__main__':
 
 	# python ../../Data\ Beers/src/midicsv-process.py Gymnopedie_No_1.midi > Gymnopedie_No_1.csv
@@ -708,8 +741,8 @@ if __name__ == '__main__':
 	name_file_midi = '../../scores/Brahms_symphony_2_1.csv'
 	name_file_midi = '../../scores/Bach_Cello_Suite_No_1.csv'
 	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_1.csv'
-	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
 	name_file_midi = '../../scores/Gymnopedie_No_1.csv'
+	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
 	#name_file_midi = '../../scores/Beethoven_Moonlight_Sonata_third_movement.csv'
 	#name_file_midi = '../../scores/Schubert_Piano_Trio_2nd_Movement.csv'
 	
@@ -729,6 +762,8 @@ if __name__ == '__main__':
 
 	musical_piece = Read(name_file_midi)
 	grades_chords = musical_piece.apply_tonality()
+
+	print(grades_chords.head(100).to_string())
 
 	print(grades_chords.groupby('dur').size())
 	print(musical_piece
