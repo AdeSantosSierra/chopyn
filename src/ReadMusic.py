@@ -509,7 +509,7 @@ class Read(Score):
 
 		enriched_chord_df['enriched_grades'] = \
 		(enriched_chord_df
-		 .apply(lambda row_df: tuple(str(row_df['general_duration'])+ chord_element for chord_element in row_df['grades']), 
+		 .apply(lambda row_df: tuple(str(row_df['general_duration'])+'.'+ chord_element for chord_element in row_df['grades']), 
 		        axis = 1)
 		 )
 
