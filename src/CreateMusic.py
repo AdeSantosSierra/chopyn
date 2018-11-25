@@ -692,8 +692,22 @@ class PlayMusicFromDataframe(object):
 
 class CreateMusicFromChordSequences(object):
 
+	def __init__(self):
+		save_path = '../checkpoint/'
+		# (source_int_text, target_int_text), (source_vocab_to_int, target_vocab_to_int), _ = load_preprocess()
+		# max_target_sentence_length = max([len(sentence) for sentence in source_int_text])
+		train_graph = tf.Graph()
+		with train_graph.as_default():
+			input_data, targets, target_sequence_length, max_target_sequence_length = self.enc_dec_model_inputs()
+    		lr, keep_prob = self.hyperparam_inputs()
 
-	def enc_dec_model_inputs():
+	def hyperparam_inputs(self):
+		lr_rate = tf.placeholder(tf.float32, name='lr_rate')
+		keep_prob = tf.placeholder(tf.float32, name='keep_prob')
+		return lr_rate, keep_prob
+
+
+	def enc_dec_model_inputs(self):
 		inputs  = tf.placeholder(tf.int32, [None, None], name='input')
 		targets = tf.placeholder(tf.int32, [None, None], name='targets') 
 		
@@ -703,7 +717,7 @@ class CreateMusicFromChordSequences(object):
 		return inputs, targets, target_sequence_length, max_target_len
 
 
-	def encoding_layer(rnn_inputs, rnn_size, num_layers, keep_prob, 
+	def encoding_layer(self, rnn_inputs, rnn_size, num_layers, keep_prob, 
 		               source_vocab_size, encoding_embedding_size):
 		"""
 		:return: tuple (RNN output, RNN state)
@@ -819,7 +833,7 @@ class CreateMusicFromChordSequences(object):
     
 		return train_output, infer_output
 
-	
+
 
 
 
@@ -857,20 +871,23 @@ if __name__ == '__main__':
 	#                        model_version_to_load = 22100, 
 	#                        bool_train = True)
 
-	musical_piece = Read(name_file_midi)
-	grades_chords = musical_piece.apply_tonality()
 
-	print(grades_chords.head(100).to_string())
+	CreateMusicFromChordSequences()
 
-	print(grades_chords.groupby('dur').size())
-	print(musical_piece
-	      .get_music_data()
-	      .groupby('dur_ticks')
-	      .size()
-	      )
+	# musical_piece = Read(name_file_midi)
+	# grades_chords = musical_piece.apply_tonality()
 
-	print(musical_piece.music_df.columns)
-	print(musical_piece.music_df[[u'start_ticks', u'start_ms', u'dur_ticks', u'dur_ms']])
-	print(grades_chords)
+	# print(grades_chords.head(100).to_string())
+
+	# print(grades_chords.groupby('dur').size())
+	# print(musical_piece
+	#       .get_music_data()
+	#       .groupby('dur_ticks')
+	#       .size()
+	#       )
+
+	# print(musical_piece.music_df.columns)
+	# print(musical_piece.music_df[[u'start_ticks', u'start_ms', u'dur_ticks', u'dur_ms']])
+	# print(grades_chords)
 
 	
