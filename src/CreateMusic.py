@@ -760,6 +760,28 @@ class CreateMusicFromChordSequences(object):
 																num_layers,
 																musical_map_dictionary)
 
+			training_logits = tf.identity(train_logits.rnn_output, name='logits')
+			inference_logits = tf.identity(inference_logits.sample_id, name='predictions')
+
+			# https://www.tensorflow.org/api_docs/python/tf/sequence_mask
+			# - Returns a mask tensor representing the first N positions of each cell.
+			masks = tf.sequence_mask(target_sequence_length, max_target_sequence_length, dtype=tf.float32, name='masks')
+			
+			with tf.name_scope("optimization"):
+				# Loss function - weighted softmax cross entropy
+				cost = tf.contrib.seq2seq.sequence_loss(
+						training_logits,
+						targets,
+						masks)
+				
+				# Optimizer
+				optimizer = tf.train.AdamOptimizer(lr)
+				
+				# Gradient Clipping
+				gradients = optimizer.compute_gradients(cost)
+				capped_gradients = [(tf.clip_by_value(grad, -1., 1.), var) for grad, var in gradients if grad is not None]
+				train_op = optimizer.apply_gradients(capped_gradients)
+
 	def hyperparam_inputs(self):
 		lr_rate = tf.placeholder(tf.float32, name='lr_rate')
 		keep_prob = tf.placeholder(tf.float32, name='keep_prob')
