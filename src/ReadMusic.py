@@ -84,6 +84,7 @@ class Read(Score):
 		self.grades       = ['I','II','III','IV','V','VI','VII']		
 		self.all_grades   = ['I','I+','II','II+','III','IV','IV+','V','V+','VI','VI+','VII']
 		self.map_duration = [1,2,3,4,6,8,12,16,24,32]
+		self.num_octaves  = 8
 
 
 		# Read midi file
@@ -514,12 +515,11 @@ class Read(Score):
 
 	def convert_tonality_to_music_dataframe(self):
 
-		num_octaves = 8
 		grades_as_columns = list()
 
 		# Calculate the names of all the columns depending on the num of octaves
 		# ['I','I+', ...] -> ['I1','I1+', ..., 'V5','V5+']
-		for iter_num_octaves in range(1, num_octaves+1):
+		for iter_num_octaves in range(1, self.num_octaves+1):
 			for iter_grade in self.all_grades:
 				if iter_grade[-1] != '+':
 					grades_as_columns.extend([iter_grade+str(iter_num_octaves)])
