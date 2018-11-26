@@ -110,6 +110,19 @@ class Read(Score):
 		              self.music_df['dur_ticks']+1
 		              )
 
+	def get_notes_dictionary(self):
+		notes = list()
+		for iter_map_duration in self.map_duration:
+			for iter_num_octaves in range(1, self.num_octaves+1):
+				for iter_all_grades in self.all_grades:
+					if iter_all_grades[-1] == '+':
+						notes.append(str(iter_map_duration)+'.'+str(iter_all_grades[:-1])+str(iter_num_octaves)+'+')
+					else:
+						notes.append(str(iter_map_duration)+'.'+str(iter_all_grades)+str(iter_num_octaves))
+
+
+		return notes
+
 	def calculate_name_note(self):
 
 		# Names can be F3#, A2#, then return F# and A#
@@ -273,6 +286,9 @@ class Read(Score):
 			              ])))
 
 		self.chord_df = chord_df[['chord','grades','time']]
+
+	def get_chord_df(self):
+		return self.chord_df
 
 	def _apply_tonality_to_altered_notes(self, chord_element, tonic_scale_notes):
 		
@@ -890,8 +906,10 @@ if __name__ == "__main__":
 
 	#print(musical_piece.granular_music_df.groupby('start_ticks').size())
 	print('holaaaaaaa')
-	musical_piece.apply_tonality()
-	musical_piece.enrich_grades_with_duration()
+	#musical_piece.apply_tonality()
+	#musical_piece.enrich_grades_with_duration()
+	print(musical_piece.get_notes_dictionary())
+	print(len(musical_piece.get_notes_dictionary()))
 	# musical_piece.convert_tonality_to_music_dict()
 
 
