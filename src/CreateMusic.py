@@ -692,14 +692,73 @@ class PlayMusicFromDataframe(object):
 
 class CreateMusicFromChordSequences(object):
 
-	def __init__(self):
+	# def __init__(self, music_data, training_iters, n_input):
+
+	# 	self.training_iters = training_iters
+	# 	self.display_step = 1000
+	# 	self.n_input = n_input
+
+	# 	# Read musical data
+	# 	self.training_data = music_data['grades']
+
+	# 	# Target log path
+	# 	path_logs = '../tmp'
+	# 	self.writer = tf.summary.FileWriter(path_logs)
+
+	# 	# Extract alphabet dictionary
+	# 	alphabet = np.unique(self.training_data)
+	# 	self.dictionary = dict(zip(alphabet,range(len(alphabet))))
+
+	def __init__(self, name_file_midi):
 		save_path = '../checkpoint/'
+
+		display_step = 300
+
+		epochs = 13
+		batch_size = 128
+
+		rnn_size = 128
+		num_layers = 3
+
+		encoding_embedding_size = 200
+		decoding_embedding_size = 200
+
+		learning_rate = 0.001
+		keep_probability = 0.5
+
+		musical_piece = Read(name_file_midi)
+		musical_piece.apply_tonality()
+		musical_piece.enrich_grades_with_duration()
+		musical_piece.get_chord_df()
+
+		training_data = musical_piece.get_chord_df()['enriched_grades']
+
+		# Get dictionary with the mapping
+		musical_notes_dictionary = musical_piece.get_notes_dictionary()+['<GO>','<EOS>']
+		musical_map_dictionary = dict(zip(musical_notes_dictionary, 
+		                                  range(1, len(musical_notes_dictionary)+1)))
+
+
+
 		# (source_int_text, target_int_text), (source_vocab_to_int, target_vocab_to_int), _ = load_preprocess()
 		# max_target_sentence_length = max([len(sentence) for sentence in source_int_text])
 		train_graph = tf.Graph()
 		with train_graph.as_default():
 			input_data, targets, target_sequence_length, max_target_sequence_length = self.enc_dec_model_inputs()
-    		lr, keep_prob = self.hyperparam_inputs()
+			lr, keep_prob = self.hyperparam_inputs()
+
+			train_logits, inference_logits = self.seq2seq_model(tf.reverse(input_data, [-1]), targets,
+																keep_prob,
+																batch_size,
+																target_sequence_length,
+																max_target_sequence_length,
+																len(musical_notes_dictionary),
+																len(musical_notes_dictionary),
+																encoding_embedding_size,
+																decoding_embedding_size,
+																rnn_size,
+																num_layers,
+																musical_map_dictionary)
 
 	def hyperparam_inputs(self):
 		lr_rate = tf.placeholder(tf.float32, name='lr_rate')
@@ -734,7 +793,7 @@ class CreateMusicFromChordSequences(object):
 		                                   dtype=tf.float32)
 		return outputs, state
 
-	def decoding_layer_train(encoder_state, dec_cell, dec_embed_input, 
+	def decoding_layer_train(self, encoder_state, dec_cell, dec_embed_input, 
         		target_sequence_length, max_summary_length, 
         		output_layer, keep_prob):
 		"""
@@ -754,7 +813,7 @@ class CreateMusicFromChordSequences(object):
 		return outputs
 
 
-	def decoding_layer_infer(encoder_state, dec_cell, dec_embeddings, start_of_sequence_id,
+	def decoding_layer_infer(self, encoder_state, dec_cell, dec_embeddings, start_of_sequence_id,
                          end_of_sequence_id, max_target_sequence_length,
                          vocab_size, output_layer, batch_size, keep_prob):
 		"""
@@ -771,7 +830,7 @@ class CreateMusicFromChordSequences(object):
 		return outputs
 
 
-	def decoding_layer(dec_input, encoder_state,
+	def decoding_layer(self, dec_input, encoder_state,
                    target_sequence_length, max_target_sequence_length,
                    rnn_size,
                    num_layers, target_vocab_to_int, target_vocab_size,
@@ -788,7 +847,7 @@ class CreateMusicFromChordSequences(object):
 		
 		with tf.variable_scope("decode"):
 			output_layer = tf.layers.Dense(target_vocab_size)
-			train_output = decoding_layer_train(encoder_state, 
+			train_output = self.decoding_layer_train(encoder_state, 
 												cells, 
 												dec_embed_input, 
 												target_sequence_length, 
@@ -797,7 +856,7 @@ class CreateMusicFromChordSequences(object):
 												keep_prob)
 
 		with tf.variable_scope("decode", reuse=True):
-			infer_output = decoding_layer_infer(encoder_state, 
+			infer_output = self.decoding_layer_infer(encoder_state, 
 												cells, 
 												dec_embeddings, 
 												target_vocab_to_int['<GO>'], 
@@ -810,8 +869,21 @@ class CreateMusicFromChordSequences(object):
 
 		return (train_output, infer_output)
 
+	def process_decoder_input(self, target_data, target_vocab_to_int, batch_size):
+		"""
+		Preprocess target data for encoding
+		:return: Preprocessed target data
+		"""
+		# get '<GO>' id
+		go_id = target_vocab_to_int['<GO>']
+		
+		after_slice = tf.strided_slice(target_data, [0, 0], [batch_size, -1], [1, 1])
+		after_concat = tf.concat( [tf.fill([batch_size, 1], go_id), after_slice], 1)
+		
+		return after_concat
 
-	def seq2seq_model(input_data, target_data, keep_prob, batch_size,
+
+	def seq2seq_model(self,input_data, target_data, keep_prob, batch_size,
                   target_sequence_length,
                   max_target_sentence_length,
                   source_vocab_size, target_vocab_size,
@@ -821,13 +893,13 @@ class CreateMusicFromChordSequences(object):
 		Build the Sequence-to-Sequence model
 		:return: Tuple of (Training BasicDecoderOutput, Inference BasicDecoderOutput)
 		"""
-		enc_outputs, enc_states = encoding_layer(input_data, 
+		enc_outputs, enc_states = self.encoding_layer(input_data, 
 		                                         rnn_size, num_layers, keep_prob, 
 		                                         source_vocab_size, enc_embedding_size)
     
-		dec_input = process_decoder_input(target_data, target_vocab_to_int, batch_size)
+		dec_input = self.process_decoder_input(target_data, target_vocab_to_int, batch_size)
     
-		train_output, infer_output = decoding_layer(dec_input,enc_states, target_sequence_length, 
+		train_output, infer_output = self.decoding_layer(dec_input,enc_states, target_sequence_length, 
 		                                            max_target_sentence_length,rnn_size,num_layers,target_vocab_to_int,
 		                                            target_vocab_size,batch_size,keep_prob,dec_embedding_size)
     
@@ -872,7 +944,7 @@ if __name__ == '__main__':
 	#                        bool_train = True)
 
 
-	CreateMusicFromChordSequences()
+	CreateMusicFromChordSequences(name_file_midi)
 
 	# musical_piece = Read(name_file_midi)
 	# grades_chords = musical_piece.apply_tonality()
