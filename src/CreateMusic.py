@@ -715,7 +715,8 @@ class CreateMusicFromChordSequences(object):
 		display_step = 300
 
 		epochs = 13
-		batch_size = 128
+		source_batch_size = 3
+		target_batch_size = 1
 
 		rnn_size = 128
 		num_layers = 3
@@ -732,6 +733,8 @@ class CreateMusicFromChordSequences(object):
 		musical_piece.get_chord_df()
 
 		training_data = musical_piece.get_chord_df()['enriched_grades']
+
+		self.get_batches(training_data, source_batch_size, target_batch_size)
 
 		# Get dictionary with the mapping
 		musical_notes_dictionary = musical_piece.get_notes_dictionary()+['<GO>','<EOS>']
@@ -765,7 +768,8 @@ class CreateMusicFromChordSequences(object):
 
 			# https://www.tensorflow.org/api_docs/python/tf/sequence_mask
 			# - Returns a mask tensor representing the first N positions of each cell.
-			masks = tf.sequence_mask(target_sequence_length, max_target_sequence_length, dtype=tf.float32, name='masks')
+			masks = tf.sequence_mask(target_sequence_length, max_target_sequence_length, 
+			                         dtype=tf.float32, name='masks')
 			
 			with tf.name_scope("optimization"):
 				# Loss function - weighted softmax cross entropy
@@ -781,6 +785,27 @@ class CreateMusicFromChordSequences(object):
 				gradients = optimizer.compute_gradients(cost)
 				capped_gradients = [(tf.clip_by_value(grad, -1., 1.), var) for grad, var in gradients if grad is not None]
 				train_op = optimizer.apply_gradients(capped_gradients)
+
+	def get_batches(self, training_data, 
+	                source_batch_size, 
+	                target_batch_size):
+
+		tensor_source = list()
+		tensor_target = list()
+
+		for iter_tuples in range(0, training_data.shape[0]-source_batch_size):
+			chord_sequence_items  = list()
+
+			for row_tuple in training_data[iter_tuples:(iter_tuples+source_batch_size)]:
+				chord_sequence_items += row_tuple
+
+			tensor_source.append(chord_sequence_items)
+			tensor_target.append(training_data[iter_tuples+source_batch_size])
+
+		print(tensor_source)
+		print(tensor_target)
+
+
 
 	def hyperparam_inputs(self):
 		lr_rate = tf.placeholder(tf.float32, name='lr_rate')
