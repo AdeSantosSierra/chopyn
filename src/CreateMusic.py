@@ -975,6 +975,8 @@ if __name__ == '__main__':
 	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
 	#name_file_midi = '../../scores/Beethoven_Moonlight_Sonata_third_movement.csv'
 	#name_file_midi = '../../scores/Schubert_Piano_Trio_2nd_Movement.csv'
+
+	name_file_metallica = '../../scores/Metallica_Nothing_else_matters.csv'
 	
 	# PlayMusicFromChords(name_file_midi, 
 	#                     n_input = 20, 
@@ -983,15 +985,15 @@ if __name__ == '__main__':
 	#                     model_version_to_load = 99000, 
 	#                     bool_train = False)
 
-	# PlayMusicFromDataframe(name_file_midi, 
-	#                        n_input = 50, 
-	#                        training_iters = 100000, 
-	#                        sequence_length = 200, 
-	#                        model_version_to_load = 22100, 
-	#                        bool_train = True)
+	PlayMusicFromDataframe(name_file_metallica, 
+	                       n_input = 50, 
+	                       training_iters = 100000, 
+	                       sequence_length = 200, 
+	                       model_version_to_load = 22100, 
+	                       bool_train = True)
 
 
-	CreateMusicFromChordSequences(name_file_midi)
+	# CreateMusicFromChordSequences(name_file_metallica)
 
 	# musical_piece = Read(name_file_midi)
 	# grades_chords = musical_piece.apply_tonality()
