@@ -547,12 +547,13 @@ class Read(Score):
 		self.empty_grades_dataframe = grades_dataframe
 
 		# Obtain tonality and grades sequence
-		grades_and_duration = self.apply_tonality()
+		# grades_and_duration = self.apply_tonality()
+		self.apply_tonality()
 
 		# In every position, store the duration
-		for iter_grades_dataframe in range(0,grades_and_duration.shape[0]):
-			grades_dataframe.loc[iter_grades_dataframe,grades_and_duration['grades'][iter_grades_dataframe]] = \
-			grades_and_duration['time'][iter_grades_dataframe]
+		for iter_grades_dataframe in range(0,self.get_chord_df().shape[0]):
+			grades_dataframe.loc[iter_grades_dataframe,self.get_chord_df()['grades'][iter_grades_dataframe]] = \
+			self.get_chord_df()['time'][iter_grades_dataframe]
 
 		# Return dataframe with grades and duration
 		return grades_dataframe.fillna(0)

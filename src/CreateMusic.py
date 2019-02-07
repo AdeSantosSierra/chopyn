@@ -294,7 +294,7 @@ class PlayMusicFromChords(object):
 		print('La tonalidad es: '+musical_piece.get_tonality())
 
 		logger.info('Calculate the tonality and apply it to the whole music piece')
-		grades_chords = musical_piece.apply_tonality()
+		musical_piece.apply_tonality()
 
 		logger.info('Extract the sequence of chords')
 
@@ -307,7 +307,7 @@ class PlayMusicFromChords(object):
 
 
 		logger.info('Create the Deep Learning object')
-		music_creator = CreateMusicFromChords(grades_chords,
+		music_creator = CreateMusicFromChords(musical_piece.get_chord_df(),
 		                                      training_iters = training_iters,
 		                                      n_input = n_input
 		                                      )	
@@ -319,7 +319,7 @@ class PlayMusicFromChords(object):
 
 
 		logger.info('Estimate initial sequence to predict based on LSTM')
-		grades_chords_values = grades_chords['grades']
+		grades_chords_values = musical_piece.get_chord_df()['grades']
 		initial_point = random.randint(0,len(grades_chords_values)-n_input-1)
 		initial_sequence_chords = list(grades_chords_values
 		                               [initial_point:(initial_point+n_input)
@@ -978,19 +978,23 @@ if __name__ == '__main__':
 
 	name_file_metallica = '../../scores/Metallica_Nothing_else_matters.csv'
 	
-	# PlayMusicFromChords(name_file_midi, 
-	#                     n_input = 20, 
-	#                     training_iters = 100000, 
-	#                     sequence_length = 500, 
-	#                     model_version_to_load = 99000, 
-	#                     bool_train = False)
 
-	PlayMusicFromDataframe(name_file_metallica, 
-	                       n_input = 50, 
-	                       training_iters = 100000, 
-	                       sequence_length = 200, 
-	                       model_version_to_load = 22100, 
-	                       bool_train = True)
+	# First approach similar to a dictionary prediction
+	PlayMusicFromChords(name_file_midi, 
+	                    n_input = 20, 
+	                    training_iters = 100000, 
+	                    sequence_length = 500, 
+	                    model_version_to_load = 99000, 
+	                    bool_train = False)
+
+	# Second approach similar to a dataframe, where all possible values were present
+	# and the music is just a value in every column. Hence, it is called dataframe.
+	# PlayMusicFromDataframe(name_file_metallica, 
+	#                        n_input = 20, 
+	#                        training_iters = 100000, 
+	#                        sequence_length = 200, 
+	#                        model_version_to_load = 100000, 
+	#                        bool_train = False)
 
 
 	# CreateMusicFromChordSequences(name_file_metallica)
