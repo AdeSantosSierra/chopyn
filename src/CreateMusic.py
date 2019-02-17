@@ -373,7 +373,6 @@ class PlayMusicFromChords(object):
 			                                )
 
 		logger.info('Create Music!!')
-		logger.info(initial_sequence_chords)
 		music_creation = \
 		music_creator.load_and_predict(dir_name_model,
 		                               dir_name_model+'/'+name_model+'-'+str(model_version_to_load)+'.meta',
@@ -1025,9 +1024,9 @@ if __name__ == '__main__':
 	PlayMusicFromChords([name_file_mozart, name_file_metallica], 
 	                    n_input = 20, 
 	                    training_iters = 100000, 
-	                    sequence_length = 500, 
-	                    model_version_to_load = 81000, 
-	                    bool_train = True)
+	                    sequence_length = 1000, 
+	                    model_version_to_load = 48000, 
+	                    bool_train = False)
 
 	# Second approach similar to a dataframe, where all possible values were present
 	# and the music is just a value in every column. Hence, it is called dataframe.

@@ -545,7 +545,6 @@ class Read(Score):
 		 )
 
 		self.chord_df = self.chord_df[['chord','grades','time','enriched_grades']]
-		print(self.chord_df.to_string())
 
 	def convert_tonality_to_music_dataframe(self):
 
