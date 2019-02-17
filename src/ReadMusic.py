@@ -222,8 +222,6 @@ class Read(Score):
 		agg_criteria = 'octave_name_note'
 		#agg_criteria = 'name_note'
 		chord_df = self.aggregate_chord_from_tick(aggregation_criteria = agg_criteria)
-
-		logger.info(chord_df)
 		
 		all_notes = list(np.unique(list(itertools.chain(*chord_df[agg_criteria]))))
 
@@ -292,6 +290,7 @@ class Read(Score):
 		self.chord_df = chord_df[['chord','grades','time']]
 
 	def get_chord_df(self):
+		self.sort_chord_df()
 		return self.chord_df
 
 

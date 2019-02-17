@@ -39,7 +39,7 @@ class CreateMusicFromChords(object):
 		self.n_input = n_input
 
 		# Read musical data
-		self.training_data = music_data['grades']
+		self.training_data = music_data['sorted_grades']
 
 		# Target log path
 		path_logs = '../tmp'
@@ -237,8 +237,6 @@ class CreateMusicFromChords(object):
 
 			symbols_in_keys = [self.dictionary[(iter_sequence)] for iter_sequence in starting_sequence]
 			
-			logger.info('Empezando sequence_length')
-
 			for i in range(sequence_length):
 
 				keys              = np.reshape(np.array(symbols_in_keys), [-1, self.n_input, 1])
@@ -251,8 +249,6 @@ class CreateMusicFromChords(object):
 				symbols_in_keys.append(onehot_pred_index)
 				# print('symbols_in_keys')
 				# print(symbols_in_keys)
-
-			logger.info('Fin sequence_length')
 
 		return output_sequence
 
@@ -338,7 +334,7 @@ class PlayMusicFromChords(object):
 			name_list.append(iter_name_file_midi.split('/')[-1].split('.csv')[0])
 
 
-		name_model = ('n_input_'+str(n_input)+'_chromatic'+'_iters_'+str(training_iters)+'_'
+		name_model = ('n_input_'+str(n_input)+'_chromatic_ordered'+'_iters_'+str(training_iters)+'_'
 		              +'_'.join(name_list))
 		dir_name_model = '../models/'+name_model
 
@@ -359,7 +355,8 @@ class PlayMusicFromChords(object):
 
 
 		logger.info('Estimate initial sequence to predict based on LSTM')
-		grades_chords_values = musical_piece.get_chord_df()['grades']
+		grades_chords_values = musical_piece.get_chord_df()['sorted_grades']
+		# grades_chords_values = musical_piece.get_chord_df()['grades']
 		
 		initial_point = random.randint(0,len(grades_chords_values)-n_input-1)
 		initial_sequence_chords = list(grades_chords_values
@@ -1028,9 +1025,9 @@ if __name__ == '__main__':
 	PlayMusicFromChords([name_file_mozart, name_file_metallica], 
 	                    n_input = 20, 
 	                    training_iters = 100000, 
-	                    sequence_length = 10, 
+	                    sequence_length = 500, 
 	                    model_version_to_load = 81000, 
-	                    bool_train = False)
+	                    bool_train = True)
 
 	# Second approach similar to a dataframe, where all possible values were present
 	# and the music is just a value in every column. Hence, it is called dataframe.
