@@ -360,8 +360,7 @@ class PlayMusicFromChords(object):
 
 		logger.info('Estimate initial sequence to predict based on LSTM')
 		grades_chords_values = musical_piece.get_chord_df()['grades']
-		logger.info(grades_chords_values)
-		logger.info(musical_piece.get_chord_df())
+		
 		initial_point = random.randint(0,len(grades_chords_values)-n_input-1)
 		initial_sequence_chords = list(grades_chords_values
 		                               [initial_point:(initial_point+n_input)
