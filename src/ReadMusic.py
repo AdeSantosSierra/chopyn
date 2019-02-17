@@ -299,7 +299,15 @@ class Read(Score):
 		# Sort grades within chord_df
 		# For instance, (III3, VI3, VI2, I3, VI4) -> (VI2, I3, III3, VI3, VI4)
 
-		
+
+		self.chord_df['sorted_grades'] = \
+		(self.chord_df
+		 .apply(lambda row_df: self._sort_chord_df(row_df['grades']), axis = 1)
+		 )
+
+	def _sort_chord_df(self, tuple_row):
+		return tuple(sorted(tuple_row, key=lambda x: (int(_clean_tuple_of_alterations(x)[-1]), 
+			                                        self.map_grades_with_scale_position[_clean_tuple_of_alterations(x)[:-1]])))
 
 	def _apply_tonality_to_altered_notes(self, chord_element, tonic_scale_notes):
 		
@@ -413,9 +421,6 @@ class Read(Score):
 		# First of all calculate chord per ticks
 		chord_per_ticks = self.get_chord_from_tick()
 
-		logger.info('chord_per_ticks')
-		logger.info(chord_per_ticks[0:100].to_string())
-
 		# See the changes in chord per ticks
 		changes_in_chords = chord_per_ticks[aggregation_criteria].diff()
 		# Since the first element is Nan, force it to be {}
@@ -463,9 +468,6 @@ class Read(Score):
 		notes_sequence = list()
 
 		for chord in grades_sequence:
-
-			logger.info(chord)
-
 			notes_chord = list()
 			for note in chord:
 				if note != 'X':
@@ -510,7 +512,6 @@ class Read(Score):
 						   'alteration':alteration, 'octave':octave}		
 				notes_chord.append(globals()[name_note](**notes_props))
 
-			logger.info(notes_chord)
 			notes_sequence.append(notes_chord)
 
 			# notes_props = {'duration':200, 'intensity':70, 'timbre':1,
@@ -904,13 +905,15 @@ def _apply_general_duration(prop_duration):
 	map_duration = [1,2,3,4,6,8,12,16,24,32]
 	return map_duration[np.argmin(np.abs(np.array(map_duration)-prop_duration))]
 
+def _clean_tuple_of_alterations(tuple_element):
+	return tuple_element.replace("+", "")
+
 
 if __name__ == "__main__":
 
 	name_file_midi = '../../scores/Schubert_S560_Schwanengesang_no7.csv'
 	name_file_midi = '../../scores/Brahms_symphony_2_2.csv' # Si M
 	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_5.csv'
-	name_file_midi = '../../scores/Mozart_Sonata_16.csv'
 	name_file_midi = '../../scores/Bach_Cello_Suite_No_1.csv'
 	name_file_midi = '../../scores/Gymnopedie_No_1.csv'
 	name_file_midi = '../../scores/Brahms_symphony_2_1.csv' # Very Slow
@@ -919,6 +922,7 @@ if __name__ == "__main__":
 	name_file_midi = '../../scores/Albeniz_Asturias.csv'
 	name_file_midi = '../../scores/Chopin_Etude_Op_10_n_1.csv'
 	name_file_midi = '../../scores/Debussy_Claire_de_Lune.csv'
+	name_file_midi = '../../scores/Mozart_Sonata_16.csv'
 	#name_file_midi = '../../scores/Beethoven_Moonlight_Sonata_third_movement.csv'
 	#name_file_midi = '../../scores/Schubert_Piano_Trio_2nd_Movement.csv'
 	
@@ -926,10 +930,11 @@ if __name__ == "__main__":
 
 	#print(musical_piece.granular_music_df.groupby('start_ticks').size())
 	print('holaaaaaaa')
-	#musical_piece.apply_tonality()
+	musical_piece.apply_tonality()
+	musical_piece.sort_chord_df()
 	#musical_piece.enrich_grades_with_duration()
-	print(musical_piece.get_notes_dictionary())
-	print(len(musical_piece.get_notes_dictionary()))
+	#print(musical_piece.get_notes_dictionary())
+	#print(len(musical_piece.get_notes_dictionary()))
 	# musical_piece.convert_tonality_to_music_dict()
 
 
