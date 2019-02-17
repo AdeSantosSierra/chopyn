@@ -31,6 +31,8 @@ import urllib2
 # sys.path.insert(0, '/Users/adesant3/Documents/Kindergarten/chopyn/c-rnn-gan')
 # from music_data_utils import *
 
+from pymongo import MongoClient
+
 
 
 class Score(object):
@@ -220,6 +222,8 @@ class Read(Score):
 		agg_criteria = 'octave_name_note'
 		#agg_criteria = 'name_note'
 		chord_df = self.aggregate_chord_from_tick(aggregation_criteria = agg_criteria)
+
+		logger.info(chord_df)
 		
 		all_notes = list(np.unique(list(itertools.chain(*chord_df[agg_criteria]))))
 
@@ -289,6 +293,13 @@ class Read(Score):
 
 	def get_chord_df(self):
 		return self.chord_df
+
+
+	def sort_chord_df(self):
+		# Sort grades within chord_df
+		# For instance, (III3, VI3, VI2, I3, VI4) -> (VI2, I3, III3, VI3, VI4)
+
+		
 
 	def _apply_tonality_to_altered_notes(self, chord_element, tonic_scale_notes):
 		
@@ -402,6 +413,9 @@ class Read(Score):
 		# First of all calculate chord per ticks
 		chord_per_ticks = self.get_chord_from_tick()
 
+		logger.info('chord_per_ticks')
+		logger.info(chord_per_ticks[0:100].to_string())
+
 		# See the changes in chord per ticks
 		changes_in_chords = chord_per_ticks[aggregation_criteria].diff()
 		# Since the first element is Nan, force it to be {}
@@ -449,6 +463,9 @@ class Read(Score):
 		notes_sequence = list()
 
 		for chord in grades_sequence:
+
+			logger.info(chord)
+
 			notes_chord = list()
 			for note in chord:
 				if note != 'X':
@@ -493,6 +510,7 @@ class Read(Score):
 						   'alteration':alteration, 'octave':octave}		
 				notes_chord.append(globals()[name_note](**notes_props))
 
+			logger.info(notes_chord)
 			notes_sequence.append(notes_chord)
 
 			# notes_props = {'duration':200, 'intensity':70, 'timbre':1,
@@ -885,6 +903,7 @@ def _apply_general_duration(prop_duration):
 	# These are the only possibilities allowed in terms of time
 	map_duration = [1,2,3,4,6,8,12,16,24,32]
 	return map_duration[np.argmin(np.abs(np.array(map_duration)-prop_duration))]
+
 
 if __name__ == "__main__":
 

@@ -237,6 +237,7 @@ class CreateMusicFromChords(object):
 
 			symbols_in_keys = [self.dictionary[(iter_sequence)] for iter_sequence in starting_sequence]
 			
+			logger.info('Empezando sequence_length')
 
 			for i in range(sequence_length):
 
@@ -250,6 +251,8 @@ class CreateMusicFromChords(object):
 				symbols_in_keys.append(onehot_pred_index)
 				# print('symbols_in_keys')
 				# print(symbols_in_keys)
+
+			logger.info('Fin sequence_length')
 
 		return output_sequence
 
@@ -289,25 +292,62 @@ class PlayMusicFromChords(object):
 	             model_version_to_load = 99000, 
 	             bool_train = False):
 
-		musical_piece = Read(name_file_midi)
+		# musical_piece = Read(name_file_midi)
 
-		print('La tonalidad es: '+musical_piece.get_tonality())
+		# print('La tonalidad es: '+musical_piece.get_tonality())
 
-		logger.info('Calculate the tonality and apply it to the whole music piece')
-		musical_piece.apply_tonality()
+		# logger.info('Calculate the tonality and apply it to the whole music piece')
+		# musical_piece.apply_tonality()
 
-		logger.info('Extract the sequence of chords')
+		# logger.info('Extract the sequence of chords')
 
 
-		name_model = 'n_input_'+str(n_input)+'_chromatic'+'_iters_'+str(training_iters)+'_'+name_file_midi[13:-4]
+		# name_model = 'n_input_'+str(n_input)+'_chromatic'+'_iters_'+str(training_iters)+'_'+name_file_midi[13:-4]
+		# dir_name_model = '../models/'+name_model
+
+		# if not os.path.exists(dir_name_model):
+		#     os.makedirs(dir_name_model)
+
+
+		# logger.info('Create the Deep Learning object')
+		# music_creator = CreateMusicFromChords(musical_piece.get_chord_df(),
+		#                                       training_iters = training_iters,
+		#                                       n_input = n_input
+		#                                       )	
+
+
+		# Many MIDI files
+
+		chord_list = list()
+		name_list  = list()
+
+
+		for iter_name_file_midi in name_file_midi:
+
+			musical_piece = Read(iter_name_file_midi)
+
+			print('La tonalidad es: '+musical_piece.get_tonality())
+
+			logger.info('Calculate the tonality and apply it to the whole music piece')
+			musical_piece.apply_tonality()
+
+			logger.info('Extract the sequence of chords')
+			chord_list.append(musical_piece.get_chord_df())
+
+			logger.info('Extract the name of the file')
+			name_list.append(iter_name_file_midi.split('/')[-1].split('.csv')[0])
+
+
+		name_model = ('n_input_'+str(n_input)+'_chromatic'+'_iters_'+str(training_iters)+'_'
+		              +'_'.join(name_list))
 		dir_name_model = '../models/'+name_model
 
 		if not os.path.exists(dir_name_model):
 		    os.makedirs(dir_name_model)
 
-
 		logger.info('Create the Deep Learning object')
-		music_creator = CreateMusicFromChords(musical_piece.get_chord_df(),
+		music_creator = CreateMusicFromChords(pd.concat(chord_list, 
+		                                                ignore_index = True),
 		                                      training_iters = training_iters,
 		                                      n_input = n_input
 		                                      )	
@@ -320,6 +360,8 @@ class PlayMusicFromChords(object):
 
 		logger.info('Estimate initial sequence to predict based on LSTM')
 		grades_chords_values = musical_piece.get_chord_df()['grades']
+		logger.info(grades_chords_values)
+		logger.info(musical_piece.get_chord_df())
 		initial_point = random.randint(0,len(grades_chords_values)-n_input-1)
 		initial_sequence_chords = list(grades_chords_values
 		                               [initial_point:(initial_point+n_input)
@@ -335,6 +377,7 @@ class PlayMusicFromChords(object):
 			                                )
 
 		logger.info('Create Music!!')
+		logger.info(initial_sequence_chords)
 		music_creation = \
 		music_creator.load_and_predict(dir_name_model,
 		                               dir_name_model+'/'+name_model+'-'+str(model_version_to_load)+'.meta',
@@ -343,6 +386,7 @@ class PlayMusicFromChords(object):
 		                               )
 
 		logger.info('Convert grades to sequences')
+		logger.info(musical_piece.get_tonality())
 		chords_notes = (musical_piece
 		                .convert_grades_sequence_to_notes(music_creation,
 		                                                  musical_piece.get_tonality()
@@ -354,7 +398,7 @@ class PlayMusicFromChords(object):
 		polyphony = SequenceChordPolyphony(chords_notes)
 		CSVtoMIDI(polyphony
 		          .convert_to_midi(),
-		          'polyphony_'+name_file_midi[13:-4]
+		          'polyphony_'+'_'.join(name_list)#name_file_midi[13:-4]
 		          )
 
 		logger.info('Finished!!!')
@@ -976,15 +1020,17 @@ if __name__ == '__main__':
 	#name_file_midi = '../../scores/Beethoven_Moonlight_Sonata_third_movement.csv'
 	#name_file_midi = '../../scores/Schubert_Piano_Trio_2nd_Movement.csv'
 
-	name_file_metallica = '../../scores/Metallica_Nothing_else_matters.csv'
+	name_file_metallica = '../../scores/Metallica_-_Nothing_else_matters_-_Piano_solo_lite.csv'
+	name_file_bach   = '../../scores/Bach_Cello_Suite_No_1.csv'
+	name_file_mozart = '../../scores/Mozart_Sonata_16.csv'
 	
 
 	# First approach similar to a dictionary prediction
-	PlayMusicFromChords(name_file_midi, 
+	PlayMusicFromChords([name_file_mozart, name_file_metallica], 
 	                    n_input = 20, 
 	                    training_iters = 100000, 
-	                    sequence_length = 500, 
-	                    model_version_to_load = 99000, 
+	                    sequence_length = 10, 
+	                    model_version_to_load = 81000, 
 	                    bool_train = False)
 
 	# Second approach similar to a dataframe, where all possible values were present
